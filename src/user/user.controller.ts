@@ -1,7 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { AuthGuard } from '../auth/guards/auth.guard';
 
 @Controller('user')
 export class UserController {
@@ -15,6 +25,12 @@ export class UserController {
   @Get(':nickName')
   findOne(@Param('nickName') nickName: string) {
     return this.userService.findOne(nickName);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get()
+  findAll() {
+    return this.userService.findAll();
   }
 
   @Patch(':id')

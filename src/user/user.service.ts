@@ -1,32 +1,32 @@
-import {BadRequestException, Injectable} from '@nestjs/common';
-import {CreateUserDto} from './dto/create-user.dto';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import {InjectRepository} from "@nestjs/typeorm";
-import {User} from "./entities/user.entity";
-import {FindOneOptions, Repository} from "typeorm";
-
-interface loginUser {
-  userName: string,
-  password: string
-}
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from './entities/user.entity';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectRepository(User)
-  private userRepository: Repository<User>) {}
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) {}
 
-  async create(createUserDto: CreateUserDto) {
-    const existUser = await this.userRepository.findOne({
-      where: {nickName: createUserDto.nickName}
-    })
-    if (existUser) {
-      throw new BadRequestException('Пользователь с таким ником уже зарегестрирован')
-    }
-    return this.userRepository.save(createUserDto)
+  async create(userDto: CreateUserDto) {
+    return this.userRepository.save(userDto);
   }
 
   async findOne(nickName: string) {
-    return this.userRepository.findOne({where: {nickName}});
+    try {
+      return await this.userRepository.findOne({ where: { nickName } });
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async findAll() {
+    return await this.userRepository.find();
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
