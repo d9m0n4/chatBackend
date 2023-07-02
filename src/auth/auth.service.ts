@@ -4,15 +4,13 @@ import {
   forwardRef,
   Inject,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '../user/entities/user.entity';
-import { CreateAuthDto } from './dto/create-auth.dto';
 import { CreateUserDto } from '../user/dto/create-user.dto';
-import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { ReturnUserDto } from '../user/dto/return-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -22,8 +20,12 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(nickName: string) {
-    return await this.userService.findOne(nickName);
+  async validateUser(nickName: string, password: string) {
+    const user = await this.userService.findOne(nickName);
+    if (user && (await bcrypt.compare(password, user.password))) {
+      return new ReturnUserDto(user);
+    }
+    return null;
   }
 
   async sigUp(user: CreateUserDto) {
@@ -37,31 +39,31 @@ export class AuthService {
       ...user,
       password: hashedPassword,
     });
-    const { nickName, id, name } = newUser;
-    const access_token = await this.jwtService.signAsync(newUser);
-    return { nickName, id, name, access_token };
+
+    return new ReturnUserDto(newUser);
   }
 
   async signIn(user: User) {
-    const userFromDb = await this.userService.findOne(user.nickName);
-    if (!userFromDb) throw new ForbiddenException('Access Denied');
-    const isPasswordMatch = await bcrypt.compare(
-      user.password,
-      userFromDb.password,
-    );
-    if (!isPasswordMatch) throw new ForbiddenException('Access Denied');
-
-    const payload = { sub: userFromDb.id, username: userFromDb.nickName };
-    const { nickName, id, name } = userFromDb;
+    const payload = {
+      nickName: user.nickName,
+      sub: user.id,
+    };
     return {
-      nickName,
-      id,
-      name,
-      access_token: await this.jwtService.signAsync(payload),
+      ...user,
+      accessToken: await this.jwtService.signAsync(payload),
+      refreshToken: await this.jwtService.signAsync(payload, {
+        expiresIn: '7d',
+      }),
     };
   }
 
-  // async createTokens () {
-  //    const accessToken = await this.jwtService.signAsync()
-  // }
+  async refreshToken(user) {
+    const payload = {
+      nickName: user.nickName,
+      sub: user.id,
+    };
+    return {
+      accessToken: await this.jwtService.signAsync(payload),
+    };
+  }
 }

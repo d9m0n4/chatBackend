@@ -6,6 +6,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from './user/entities/user.entity';
 import { AuthModule } from './auth/auth.module';
+import { AuthService } from './auth/auth.service';
+import { DialogModule } from './dialog/dialog.module';
+import { Dialog } from './dialog/entities/dialog.entity';
 
 @Module({
   imports: [
@@ -19,13 +22,14 @@ import { AuthModule } from './auth/auth.module';
         database: process.env.DB_NAME,
         username: process.env.DB_USER_NAME,
         password: process.env.DB_PASSWORD,
-        entities: [User],
+        entities: [User, Dialog],
         synchronize: true,
       }),
       inject: [ConfigService],
     }),
     UserModule,
     AuthModule,
+    DialogModule,
   ],
   controllers: [AppController],
   providers: [AppService],

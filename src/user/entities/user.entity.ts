@@ -1,17 +1,19 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "typeorm";
-import {IsNotEmpty, Min} from "class-validator";
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class User {
-    @PrimaryGeneratedColumn()
-    id?: number
+  @PrimaryGeneratedColumn()
+  id?: number;
 
-    @Column()
-    name?: string
+  @Column()
+  name?: string;
 
-    @Column({unique: true})
-    nickName?: string
+  @Column({ unique: true })
+  nickName?: string;
 
-    @Column()
-    password?: string
+  @Column({ nullable: true })
+  avatarUrl: string;
+
+  @Column()
+  password?: string;
 }
