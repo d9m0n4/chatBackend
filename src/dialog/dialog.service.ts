@@ -1,33 +1,34 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateDialogDto } from './dto/create-dialog.dto';
 import { UpdateDialogDto } from './dto/update-dialog.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Dialog } from './entities/dialog.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { User } from '../user/entities/user.entity';
+import { ReturnUserDto } from '../user/dto/return-user.dto';
 
 @Injectable()
 export class DialogService {
   constructor(
     @InjectRepository(Dialog)
-    private dialogRepository: Repository<Dialog>,
+    private readonly dialogRepository: Repository<Dialog>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
-  create(createDialogDto: CreateDialogDto) {
-    return this.dialogRepository.save(createDialogDto);
-  }
+  async create(partner: number, userId: number) {
+    try {
+      const users = await this.userRepository.findBy({
+        id: In([partner, userId]),
+      });
+      if (users.length < 2) {
+        throw new NotFoundException();
+      }
+      const dialog = new Dialog();
+      dialog.users = users;
 
-  findAll() {
-    return `This action returns all dialog`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} dialog`;
-  }
-
-  update(id: number, updateDialogDto: UpdateDialogDto) {
-    return `This action updates a #${id} dialog`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} dialog`;
+      return this.dialogRepository.save(dialog);
+    } catch (error) {
+      throw new NotFoundException();
+    }
   }
 }

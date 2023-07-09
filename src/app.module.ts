@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
@@ -6,9 +6,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from './user/entities/user.entity';
 import { AuthModule } from './auth/auth.module';
-import { AuthService } from './auth/auth.service';
 import { DialogModule } from './dialog/dialog.module';
 import { Dialog } from './dialog/entities/dialog.entity';
+import { MessageModule } from './message/message.module';
+import { Message } from './message/entities/message.entity';
+import { AttachmentModule } from './attachment/attachment.module';
+import { Attachment } from './attachment/entities/attachment.entity';
 
 @Module({
   imports: [
@@ -22,13 +25,15 @@ import { Dialog } from './dialog/entities/dialog.entity';
         database: process.env.DB_NAME,
         username: process.env.DB_USER_NAME,
         password: process.env.DB_PASSWORD,
-        entities: [User, Dialog],
+        entities: [User, Dialog, Message, Attachment],
         synchronize: true,
       }),
       inject: [ConfigService],
     }),
     UserModule,
     AuthModule,
+    AttachmentModule,
+    MessageModule,
     DialogModule,
   ],
   controllers: [AppController],

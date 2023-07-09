@@ -1,5 +1,4 @@
 import { IsNotEmpty } from 'class-validator';
-import { Exclude } from 'class-transformer';
 
 export class CreateUserDto {
   @IsNotEmpty({ message: 'Поле не может быть пустым!' })
