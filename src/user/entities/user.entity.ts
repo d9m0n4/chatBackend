@@ -9,7 +9,6 @@ import {
 } from 'typeorm';
 import { Message } from '../../message/entities/message.entity';
 import { Dialog } from '../../dialog/entities/dialog.entity';
-import { JoinTable } from 'typeorm';
 
 @Entity()
 export class User {
