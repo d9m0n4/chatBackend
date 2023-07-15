@@ -1,17 +1,17 @@
 import {
+  Column,
   CreateDateColumn,
   Entity,
-  Index,
+  JoinColumn,
+  JoinTable,
   ManyToMany,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
-  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
-import { JoinTable } from 'typeorm';
 import { Message } from '../../message/entities/message.entity';
-import { ReturnUserDto } from '../../user/dto/return-user.dto';
 
 @Entity()
 export class Dialog {
@@ -24,6 +24,9 @@ export class Dialog {
 
   @OneToMany(() => Message, (message) => message.dialog)
   messages: Message[];
+
+  @Column({ nullable: true })
+  latestMessage: number | null;
 
   @CreateDateColumn({
     type: 'timestamp',

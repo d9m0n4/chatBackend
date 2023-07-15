@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 
@@ -9,5 +9,10 @@ export class MessageController {
   @Post()
   create(@Body() createMessageDto: CreateMessageDto) {
     return this.messageService.create(createMessageDto);
+  }
+
+  @Get()
+  getAllMessagesByDialogId() {
+    return this.messageService.getAllMessagesByDialogId(9);
   }
 }

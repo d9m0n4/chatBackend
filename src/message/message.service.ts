@@ -36,6 +36,21 @@ export class MessageService {
     //   attachment.url = attachmentItem
     // }
 
-    return await this.messageRepository.save(message);
+    const newMessage = await this.messageRepository.save(message);
+    dialog.latestMessage = newMessage.id;
+    await this.dialogRepository.save(dialog);
+
+    return newMessage;
+  }
+
+  async getAllMessagesByDialogId(dialogId: number) {
+    const messages = await this.messageRepository
+      .createQueryBuilder('message')
+      .leftJoin('message.dialog', 'dialog')
+      .leftJoinAndSelect('message.user', 'user')
+      .where('dialog.id = :dialogId', { dialogId })
+      .getMany();
+
+    return messages;
   }
 }

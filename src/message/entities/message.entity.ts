@@ -4,6 +4,7 @@ import {
   Entity,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -11,6 +12,7 @@ import { User } from '../../user/entities/user.entity';
 import { Dialog } from '../../dialog/entities/dialog.entity';
 import { JoinColumn } from 'typeorm';
 import { Attachment } from '../../attachment/entities/attachment.entity';
+import { Exclude, Transform } from 'class-transformer';
 
 @Entity()
 export class Message {
