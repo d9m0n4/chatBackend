@@ -49,6 +49,13 @@ export class MessageService {
       .leftJoin('message.dialog', 'dialog')
       .leftJoinAndSelect('message.user', 'user')
       .where('dialog.id = :dialogId', { dialogId })
+      .select([
+        'message',
+        'user.id',
+        'user.nickName',
+        'user.name',
+        'user.avatarUrl',
+      ])
       .getMany();
 
     return messages;

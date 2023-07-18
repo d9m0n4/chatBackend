@@ -13,6 +13,9 @@ export class Attachment {
   id: number;
 
   @Column()
+  filename: string;
+
+  @Column()
   url: string;
 
   @ManyToOne(() => Message)

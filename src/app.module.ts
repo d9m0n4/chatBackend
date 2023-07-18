@@ -12,6 +12,7 @@ import { MessageModule } from './message/message.module';
 import { Message } from './message/entities/message.entity';
 import { AttachmentModule } from './attachment/attachment.module';
 import { Attachment } from './attachment/entities/attachment.entity';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
@@ -35,6 +36,9 @@ import { Attachment } from './attachment/entities/attachment.entity';
     AttachmentModule,
     MessageModule,
     DialogModule,
+    MulterModule.register({
+      dest: '../uploads',
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
