@@ -65,10 +65,14 @@ export class DialogService {
         .where('user.id = :userId', { userId })
         .getMany();
 
-      return dialogs.map((dialog) => ({
-        ...dialog,
-        users: dialog.users.map((user) => new ReturnUserDto(user)),
-      }));
+      return dialogs.map((dialog) => {
+        const partner = dialog.users.find((user) => user.id !== userId);
+        return {
+          ...dialog,
+          partner: new ReturnUserDto(partner),
+          users: undefined,
+        };
+      });
     } catch (error) {
       console.log(error);
       throw new NotFoundException();

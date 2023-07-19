@@ -3,8 +3,8 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   UploadedFile,
-  UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
 import { MessageService } from './message.service';
@@ -28,7 +28,7 @@ export class MessageController {
   }
 
   @Get()
-  getAllMessagesByDialogId() {
-    return this.messageService.getAllMessagesByDialogId(9);
+  getAllMessagesByDialogId(@Query('dialogId') dialogId: number) {
+    return this.messageService.getAllMessagesByDialogId(dialogId);
   }
 }

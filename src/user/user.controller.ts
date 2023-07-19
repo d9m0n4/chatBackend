@@ -25,7 +25,7 @@ export class UserController {
   }
   @UseGuards(JwtAuthGuard)
   @Get()
-  findOne(@Query('id') id: any) {
+  findOne(@Query('id') id: number) {
     return this.userService.findById(+id);
   }
 

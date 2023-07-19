@@ -1,8 +1,16 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { DialogService } from './dialog.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('dialog')
+@Controller('dialogs')
 export class DialogController {
   constructor(private readonly dialogService: DialogService) {}
 
@@ -13,8 +21,9 @@ export class DialogController {
     return await this.dialogService.create(partner, req.user.id);
   }
 
-  @Get()
-  async getMyDialogs() {
-    return await this.dialogService.getMyDialogsWithUsers(13);
+  @Get('my')
+  @UseGuards(JwtAuthGuard)
+  async getMyDialogs(@Req() req) {
+    return await this.dialogService.getMyDialogsWithUsers(req.user.id);
   }
 }
