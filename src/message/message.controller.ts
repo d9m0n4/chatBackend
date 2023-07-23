@@ -5,11 +5,13 @@ import {
   Post,
   Query,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('messages')
 export class MessageController {
@@ -22,11 +24,14 @@ export class MessageController {
     // return this.messageService.create(createMessageDto);
     return file;
   }
+
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() createMessageDto: CreateMessageDto) {
     return this.messageService.create(createMessageDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   getAllMessagesByDialogId(@Query('dialogId') dialogId: number) {
     return this.messageService.getAllMessagesByDialogId(dialogId);

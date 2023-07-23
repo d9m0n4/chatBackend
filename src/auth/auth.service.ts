@@ -66,4 +66,13 @@ export class AuthService {
       accessToken: await this.jwtService.signAsync(payload),
     };
   }
+
+  async getCookiesFromToken(user) {
+    const payload = {
+      nickName: user.nickName,
+      sub: user.id,
+    };
+    const token = await this.jwtService.signAsync(payload);
+    return token;
+  }
 }
