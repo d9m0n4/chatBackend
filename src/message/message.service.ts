@@ -17,9 +17,9 @@ export class MessageService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
   ) {}
-  async create(createMessageDto: CreateMessageDto) {
+  async create(createMessageDto: CreateMessageDto, userId: number) {
     const user = await this.userRepository.findOne({
-      where: { id: createMessageDto.userId },
+      where: { id: userId },
     });
     const dialog = await this.dialogRepository.findOne({
       where: { id: createMessageDto.dialogId },
@@ -49,6 +49,8 @@ export class MessageService {
       .leftJoin('message.dialog', 'dialog')
       .leftJoinAndSelect('message.user', 'user')
       .where('dialog.id = :dialogId', { dialogId })
+      .orderBy('message.created_at', 'DESC')
+      .take(50)
       .select([
         'message',
         'user.id',
@@ -58,6 +60,6 @@ export class MessageService {
       ])
       .getMany();
 
-    return messages;
+    return messages.reverse();
   }
 }

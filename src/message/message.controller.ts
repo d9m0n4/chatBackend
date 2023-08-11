@@ -4,6 +4,7 @@ import {
   Get,
   Post,
   Query,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -27,8 +28,8 @@ export class MessageController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createMessageDto: CreateMessageDto) {
-    return this.messageService.create(createMessageDto);
+  create(@Body() createMessageDto: CreateMessageDto, @Req() req) {
+    return this.messageService.create(createMessageDto, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)

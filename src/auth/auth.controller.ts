@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   Request,
   Res,
@@ -19,9 +20,13 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('signIn')
   async signIn(@Request() req, @Res({ passthrough: true }) response: Response) {
-    const token = await this.authService.getCookiesFromToken(req.user);
-    response.cookie('jwt', token, { httpOnly: true, secure: false });
-    return await this.authService.signIn(req.user);
+    const user = await this.authService.signIn(req.user);
+    response.cookie('jwt', user.accessToken, { httpOnly: true, secure: false });
+    response.cookie('refresh', user.refreshToken, {
+      httpOnly: true,
+      secure: false,
+    });
+    return user;
   }
 
   @Post('signUp')
@@ -29,8 +34,16 @@ export class AuthController {
     return await this.authService.sigUp(dto);
   }
   @UseGuards(RefreshJwtAuthGuard)
-  @Post('refresh')
-  async refreshToken(@Request() req) {
-    return await this.authService.refreshToken(req.user);
+  @Get('refresh')
+  async refreshToken(
+    @Request() req,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const token = await this.authService.refreshToken(req.user);
+    response.cookie('jwt', token.accessToken, {
+      httpOnly: true,
+      secure: false,
+    });
+    return token;
   }
 }

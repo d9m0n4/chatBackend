@@ -17,7 +17,7 @@ import { RefreshTokenStrategy } from './strategies/refreshToken.strategy';
     JwtModule.register({
       global: true,
       secret: `qwe123`,
-      signOptions: { expiresIn: '600s' },
+      signOptions: { expiresIn: '60s' },
     }),
   ],
   controllers: [AuthController],
