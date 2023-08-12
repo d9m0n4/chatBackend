@@ -40,6 +40,8 @@ export class MessageService {
     dialog.latestMessage = newMessage.id;
     await this.dialogRepository.save(dialog);
 
+    console.log(newMessage);
+
     return newMessage;
   }
 

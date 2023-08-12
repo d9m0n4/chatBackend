@@ -55,14 +55,15 @@ export class DialogService {
       const dialogs = await this.dialogRepository
         .createQueryBuilder('dialog')
         .leftJoinAndSelect('dialog.users', 'user')
+        .leftJoinAndSelect('dialog.users', 'dialog_users')
         .leftJoinAndMapOne(
           'dialog.latestMessage',
           Message,
           'message',
-          'message.dialogId = dialog.id',
+          'message.id = dialog.latestMessage',
         )
-        .leftJoinAndSelect('dialog.users', 'dialog_users')
         .where('user.id = :userId', { userId })
+        .orderBy('dialog.updated_at', 'DESC')
         .getMany();
 
       return dialogs.map((dialog) => {
