@@ -13,6 +13,7 @@ import { Message } from './message/entities/message.entity';
 import { AttachmentModule } from './attachment/attachment.module';
 import { Attachment } from './attachment/entities/attachment.entity';
 import { MulterModule } from '@nestjs/platform-express';
+import { AppGateway } from './gateway/app.gateway';
 
 @Module({
   imports: [
@@ -41,6 +42,6 @@ import { MulterModule } from '@nestjs/platform-express';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, AppGateway],
 })
 export class AppModule {}
