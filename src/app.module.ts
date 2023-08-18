@@ -14,6 +14,7 @@ import { AttachmentModule } from './attachment/attachment.module';
 import { Attachment } from './attachment/entities/attachment.entity';
 import { MulterModule } from '@nestjs/platform-express';
 import { AppGateway } from './gateway/app.gateway';
+import { GatewayModule } from './gateway/app.gateway.module';
 
 @Module({
   imports: [
@@ -37,11 +38,12 @@ import { AppGateway } from './gateway/app.gateway';
     AttachmentModule,
     MessageModule,
     DialogModule,
+    GatewayModule,
     MulterModule.register({
       dest: '../uploads',
     }),
   ],
   controllers: [AppController],
-  providers: [AppService, AppGateway],
+  providers: [AppService],
 })
 export class AppModule {}
