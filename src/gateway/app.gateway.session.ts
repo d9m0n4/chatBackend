@@ -9,7 +9,7 @@ export class GatewaySession {
     this.session.set(userId, socket);
   }
   getUserSocket(id: number) {
-    this.session.get(id);
+    return this.session.get(id);
   }
 
   removeUserSocket(id: number) {

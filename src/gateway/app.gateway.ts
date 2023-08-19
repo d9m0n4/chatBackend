@@ -27,30 +27,52 @@ export class AppGateway
   server: Server;
 
   @UseGuards(JwtAuthGuard)
-  handleConnection(client, ...args): any {
+  handleConnection(client, ...args) {
     if (client.user) {
       this.sessions.setUserSocket(client.user.sub, client);
     }
   }
 
-  handleDisconnect(client: any): any {
+  handleDisconnect(client: any) {
     if (client.user) {
       this.sessions.removeUserSocket(client.user.sub);
     }
   }
 
-  afterInit(server: any): any {
+  async afterInit(server: any) {
     console.log('afterInit socket');
   }
 
   @SubscribeMessage('create_dialog')
-  handleCreateDialog(
+  async handleCreateDialog(
     @MessageBody() data: any,
     @ConnectedSocket() socket,
-  ): string {
+  ) {
     const users = this.sessions.getSockets();
-    socket.emit('users', { users: users.entries() });
-    console.log(data);
+    // socket.emit('users', socket.user);
     return 'asdasdasd';
+  }
+
+  @SubscribeMessage('user_online')
+  handleUserOnline(
+    @MessageBody() myDialogPartners: any,
+    @ConnectedSocket() clientSocket,
+  ) {
+    if (myDialogPartners) {
+      myDialogPartners.forEach((userId) => {
+        const myDialogPartnerSocket = this.sessions.getUserSocket(userId);
+        if (myDialogPartnerSocket) {
+          myDialogPartnerSocket.emit('online', clientSocket.user.sub);
+        }
+      });
+    }
+    const onlineDialogs = myDialogPartners.map((userId) => {
+      const onlineSocket = this.sessions.getUserSocket(userId);
+      if (onlineSocket) {
+        return onlineSocket.user.id; // authSocket
+      }
+      return;
+    });
+    console.log(onlineDialogs);
   }
 }
