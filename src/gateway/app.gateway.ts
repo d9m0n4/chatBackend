@@ -12,6 +12,7 @@ import { Server } from 'socket.io';
 import { Inject, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GatewaySession } from './app.gateway.session';
+import { AuthenticatedSocket } from './types';
 
 @WebSocketGateway({
   cors: {
@@ -54,25 +55,50 @@ export class AppGateway
   }
 
   @SubscribeMessage('user_online')
-  handleUserOnline(
-    @MessageBody() myDialogPartners: any,
-    @ConnectedSocket() clientSocket,
+  async handleUserOnline(
+    @MessageBody() myDialogPartners: number[],
+    @ConnectedSocket() clientSocket: AuthenticatedSocket,
   ) {
     if (myDialogPartners) {
       myDialogPartners.forEach((userId) => {
         const myDialogPartnerSocket = this.sessions.getUserSocket(userId);
-        if (myDialogPartnerSocket) {
-          myDialogPartnerSocket.emit('online', clientSocket.user.sub);
+        if (myDialogPartnerSocket && clientSocket.user) {
+          return myDialogPartnerSocket.emit('online', clientSocket.user.sub);
         }
       });
     }
-    const onlineDialogs = myDialogPartners.map((userId) => {
-      const onlineSocket = this.sessions.getUserSocket(userId);
-      if (onlineSocket) {
-        return onlineSocket.user.id; // authSocket
+  }
+
+  @SubscribeMessage('on_typing_message')
+  async handleTypingMessage(
+    @MessageBody() myDialogPartner: { partner: number; dialog: number },
+    @ConnectedSocket() clientSocket: AuthenticatedSocket,
+  ) {
+    console.log(myDialogPartner);
+    if (myDialogPartner) {
+      const myDialogPartnerSocket = await this.sessions.getUserSocket(
+        myDialogPartner.partner,
+      );
+      if (myDialogPartnerSocket) {
+        myDialogPartnerSocket.emit('on_typing_message', myDialogPartner.dialog);
       }
-      return;
-    });
-    console.log(onlineDialogs);
+    }
+  }
+  @SubscribeMessage('on_stop_typing_message')
+  async handleStopTypingMessage(
+    @MessageBody() myDialogPartner: { partner: number; dialog: number },
+    @ConnectedSocket() clientSocket: AuthenticatedSocket,
+  ) {
+    if (myDialogPartner) {
+      const myDialogPartnerSocket = await this.sessions.getUserSocket(
+        myDialogPartner.partner,
+      );
+      if (myDialogPartnerSocket) {
+        myDialogPartnerSocket.emit(
+          'on_stop_typing_message',
+          myDialogPartner.dialog,
+        );
+      }
+    }
   }
 }

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { Socket } from 'socket.io';
+import { AuthenticatedSocket } from './types';
 
 @Injectable()
 export class GatewaySession {
-  private readonly session: Map<number, Socket> = new Map();
+  private readonly session: Map<number, AuthenticatedSocket> = new Map();
 
-  setUserSocket(userId: number, socket: Socket) {
+  setUserSocket(userId: number, socket: AuthenticatedSocket) {
     this.session.set(userId, socket);
   }
   getUserSocket(id: number) {

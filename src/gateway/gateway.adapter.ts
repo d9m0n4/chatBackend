@@ -25,15 +25,6 @@ export class CookieAuthSocketAdapter extends IoAdapter {
           socket.user = decodedToken;
         } catch (error) {
           if (error instanceof jwt.TokenExpiredError) {
-            // const refreshToken = cookies.refresh;
-            // const decodedToken = await this.jwtService.verifyAsync(
-            //   refreshToken,
-            // );
-            // const payload = {
-            //   nickName: decodedToken.nickName,
-            //   sub: decodedToken.sub,
-            // };
-            // const newJwt = await this.jwtService.signAsync(payload);
             socket.emit('refreshToken');
             next();
           } else {
