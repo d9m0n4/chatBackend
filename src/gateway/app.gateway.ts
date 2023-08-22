@@ -13,6 +13,8 @@ import { Inject, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GatewaySession } from './app.gateway.session';
 import { AuthenticatedSocket } from './types';
+import { OnEvent } from '@nestjs/event-emitter';
+import { Message } from '../message/entities/message.entity';
 
 @WebSocketGateway({
   cors: {
@@ -99,6 +101,18 @@ export class AppGateway
           myDialogPartner.dialog,
         );
       }
+    }
+  }
+
+  @OnEvent('message_create')
+  handleCreateMessage(payload: Message) {
+    if (payload) {
+      payload.dialog.users.forEach((user) => {
+        const socket = this.sessions.getUserSocket(user.id);
+        if (socket) {
+          socket.emit('message_created', payload);
+        }
+      });
     }
   }
 }

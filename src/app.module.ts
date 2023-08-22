@@ -15,6 +15,7 @@ import { Attachment } from './attachment/entities/attachment.entity';
 import { MulterModule } from '@nestjs/platform-express';
 import { AppGateway } from './gateway/app.gateway';
 import { GatewayModule } from './gateway/app.gateway.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { GatewayModule } from './gateway/app.gateway.module';
       }),
       inject: [ConfigService],
     }),
+    EventEmitterModule.forRoot(),
     UserModule,
     AuthModule,
     AttachmentModule,

@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { Dialog } from '../dialog/entities/dialog.entity';
 import { User } from '../user/entities/user.entity';
 import { Attachment } from '../attachment/entities/attachment.entity';
+import { ReturnUserDto } from '../user/dto/return-user.dto';
 
 @Injectable()
 export class MessageService {
@@ -23,6 +24,7 @@ export class MessageService {
     });
     const dialog = await this.dialogRepository.findOne({
       where: { id: createMessageDto.dialogId },
+      relations: { users: true },
     });
 
     const message = new Message();
@@ -40,9 +42,14 @@ export class MessageService {
     dialog.latestMessage = newMessage.id;
     await this.dialogRepository.save(dialog);
 
-    console.log(newMessage);
-
-    return newMessage;
+    return {
+      ...newMessage,
+      user: new ReturnUserDto(newMessage.user),
+      dialog: {
+        ...dialog,
+        users: dialog.users.map((user) => new ReturnUserDto(user)),
+      },
+    };
   }
 
   async getAllMessagesByDialogId(dialogId: number) {
