@@ -69,6 +69,16 @@ export class MessageService {
       ])
       .getMany();
 
-    return messages.reverse();
+    const groupedMessages = {};
+
+    messages.reverse().forEach((message) => {
+      const date = message.created_at.toISOString().substr(0, 10);
+      if (!groupedMessages[date]) {
+        groupedMessages[date] = [];
+      }
+      groupedMessages[date].push(message);
+    });
+
+    return groupedMessages;
   }
 }
