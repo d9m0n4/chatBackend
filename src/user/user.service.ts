@@ -43,7 +43,7 @@ export class UserService {
     }
   }
 
-  async findByNickName(nickName: string) {
+  async findByNickName({ nickName, user }: { nickName: string; user: User }) {
     try {
       const users = await this.userRepository.findBy({
         nickName: Like(`%${nickName}%`),
@@ -52,7 +52,12 @@ export class UserService {
       if (!users) {
         return new NotFoundException();
       }
-      return users.map((user) => new ReturnUserDto(user));
+      return users.filter((userFromDB) => {
+        if (userFromDB.nickName === user.nickName) {
+          return;
+        }
+        return new ReturnUserDto(user);
+      });
     } catch (e) {
       console.log(e);
     }

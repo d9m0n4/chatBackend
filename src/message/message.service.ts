@@ -55,17 +55,24 @@ export class MessageService {
   async getAllMessagesByDialogId(dialogId: number) {
     const messages = await this.messageRepository
       .createQueryBuilder('message')
-      .leftJoin('message.dialog', 'dialog')
+      .leftJoinAndSelect('message.dialog', 'dialog')
+      .leftJoinAndSelect('dialog.users', 'users')
       .leftJoinAndSelect('message.user', 'user')
       .where('dialog.id = :dialogId', { dialogId })
       .orderBy('message.created_at', 'DESC')
       .take(50)
+      .offset(0)
       .select([
         'message',
         'user.id',
         'user.nickName',
         'user.name',
         'user.avatarUrl',
+        'dialog',
+        'users.id',
+        'users.avatarUrl',
+        'users.name',
+        'users.nickName',
       ])
       .getMany();
 

@@ -25,7 +25,7 @@ export class DialogService {
       });
 
       if (users.length < 2) {
-        return new BadRequestException();
+        throw new BadRequestException();
       }
 
       const existDialog = await this.dialogRepository
@@ -37,13 +37,19 @@ export class DialogService {
         .getMany();
 
       if (existDialog.length > 0) {
-        return new BadRequestException('Такой диалог уже существует');
+        throw new BadRequestException('Такой диалог уже существует');
       }
 
       const dialog = new Dialog();
       dialog.users = users;
 
-      return this.dialogRepository.save(dialog);
+      const dialogData = await this.dialogRepository.save(dialog);
+      const partnerData = dialogData.users.find((user) => user.id !== userId);
+
+      return {
+        ...dialogData,
+        partner: partnerData,
+      };
     } catch (error) {
       console.log(error);
       throw new NotFoundException();

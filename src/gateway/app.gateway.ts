@@ -15,6 +15,7 @@ import { GatewaySession } from './app.gateway.session';
 import { AuthenticatedSocket } from './types';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Message } from '../message/entities/message.entity';
+import { Dialog } from '../dialog/entities/dialog.entity';
 
 @WebSocketGateway({
   cors: {
@@ -33,12 +34,15 @@ export class AppGateway
   handleConnection(client, ...args) {
     if (client.user) {
       this.sessions.setUserSocket(client.user.sub, client);
+      console.log('from_connected', client.id, client.user.sub);
     }
   }
 
   handleDisconnect(client: any) {
     if (client.user) {
       this.sessions.removeUserSocket(client.user.sub);
+      console.log(client.user, 'disconnected');
+      client.emit('dis', 'отвалился');
     }
   }
 
@@ -61,13 +65,17 @@ export class AppGateway
     @MessageBody() myDialogPartners: number[],
     @ConnectedSocket() clientSocket: AuthenticatedSocket,
   ) {
+    const partnersOnline = [];
     if (myDialogPartners) {
       myDialogPartners.forEach((userId) => {
         const myDialogPartnerSocket = this.sessions.getUserSocket(userId);
         if (myDialogPartnerSocket && clientSocket.user) {
-          return myDialogPartnerSocket.emit('online', clientSocket.user.sub);
+          console.log(clientSocket.user);
+          myDialogPartnerSocket.emit('online', clientSocket.user.sub);
+          partnersOnline.push(myDialogPartnerSocket.user.sub);
         }
       });
+      clientSocket.emit('friends_online', partnersOnline);
     }
   }
 
@@ -76,7 +84,6 @@ export class AppGateway
     @MessageBody() myDialogPartner: { partner: number; dialog: number },
     @ConnectedSocket() clientSocket: AuthenticatedSocket,
   ) {
-    console.log(myDialogPartner);
     if (myDialogPartner) {
       const myDialogPartnerSocket = await this.sessions.getUserSocket(
         myDialogPartner.partner,
@@ -111,6 +118,18 @@ export class AppGateway
         const socket = this.sessions.getUserSocket(user.id);
         if (socket) {
           socket.emit('message_created', payload);
+        }
+      });
+    }
+  }
+
+  @OnEvent('dialog_create')
+  handleDialogCreate(payload) {
+    if (payload) {
+      payload.users.forEach((user) => {
+        const socket = this.sessions.getUserSocket(user.id);
+        if (socket) {
+          socket.emit('dialog_created', { ...payload, users: undefined });
         }
       });
     }

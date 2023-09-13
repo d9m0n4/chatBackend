@@ -6,12 +6,13 @@ import {
   Query,
   Req,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
@@ -23,22 +24,21 @@ export class MessageController {
   ) {}
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
-  createFile(@UploadedFile() file: Express.Multer.File) {
-    console.log(file);
-    // return this.messageService.create(createMessageDto);
-    return file;
+  @UseInterceptors(FilesInterceptor('files'))
+  uploadFile(@UploadedFiles() files: Array<Express.Multer.File>) {
+    console.log(files);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Body() createMessageDto: CreateMessageDto, @Req() req) {
+    console.log(createMessageDto);
     const message = await this.messageService.create(
       createMessageDto,
       req.user.id,
     );
     this.eventEmitter.emit('message_create', message);
-    return;
+    return message;
   }
 
   @UseGuards(JwtAuthGuard)

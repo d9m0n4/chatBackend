@@ -1,8 +1,9 @@
-import { INestApplicationContext, UnauthorizedException } from '@nestjs/common';
+import { INestApplicationContext } from '@nestjs/common';
 import * as cookie from 'cookie';
 import * as jwt from 'jsonwebtoken';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { JwtService } from '@nestjs/jwt';
+import { AuthenticatedSocket } from './types';
 
 export class CookieAuthSocketAdapter extends IoAdapter {
   private jwtService: JwtService;
@@ -14,15 +15,14 @@ export class CookieAuthSocketAdapter extends IoAdapter {
   createIOServer(port: number, options?: any): any {
     const server = super.createIOServer(port, options);
 
-    server.use(async (socket, next) => {
+    server.use(async (socket: AuthenticatedSocket, next) => {
       const headers = socket.handshake.headers;
       const cookies = cookie.parse(headers.cookie || '');
 
       if (cookies.jwt) {
         try {
-          const decodedToken = await this.jwtService.verifyAsync(cookies.jwt);
-
-          socket.user = decodedToken;
+          socket.user = await this.jwtService.verifyAsync(cookies.jwt);
+          next();
         } catch (error) {
           if (error instanceof jwt.TokenExpiredError) {
             socket.emit('refreshToken');

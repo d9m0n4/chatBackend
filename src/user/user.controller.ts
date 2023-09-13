@@ -32,8 +32,8 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Get('search')
-  findByNickName(@Query('nickname') nickName: string) {
-    return this.userService.findByNickName(nickName);
+  findByNickName(@Query('nickname') nickName: string, @Req() req) {
+    return this.userService.findByNickName({ nickName, user: req.user });
   }
 
   @UseGuards(JwtAuthGuard)
