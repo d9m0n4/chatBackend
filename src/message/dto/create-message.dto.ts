@@ -8,5 +8,7 @@ export class CreateMessageDto {
   @IsNotEmpty()
   content: string;
 
+  files?: any;
+
   attachments?: Attachment[];
 }

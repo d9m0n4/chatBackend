@@ -16,6 +16,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { AppGateway } from './gateway/app.gateway';
 import { GatewayModule } from './gateway/app.gateway.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -41,9 +42,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     MessageModule,
     DialogModule,
     GatewayModule,
-    MulterModule.register({
-      dest: '../uploads',
-    }),
+    FilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

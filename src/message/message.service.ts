@@ -31,6 +31,7 @@ export class MessageService {
     message.user = user;
     message.dialog = dialog;
     message.content = createMessageDto.content;
+    message.files = createMessageDto.files;
 
     // for (const attachmentItem of createMessageDto.attachments) {
     //   const attachment = new Attachment()

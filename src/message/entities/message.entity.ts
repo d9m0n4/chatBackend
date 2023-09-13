@@ -39,6 +39,9 @@ export class Message {
   })
   created_at: Date;
 
+  @Column('varchar', { nullable: true, array: true })
+  files: string[];
+
   @UpdateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP(6)',
