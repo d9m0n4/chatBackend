@@ -5,7 +5,6 @@ import { Message } from './entities/message.entity';
 import { Repository } from 'typeorm';
 import { Dialog } from '../dialog/entities/dialog.entity';
 import { User } from '../user/entities/user.entity';
-import { Attachment } from '../attachment/entities/attachment.entity';
 import { ReturnUserDto } from '../user/dto/return-user.dto';
 
 @Injectable()

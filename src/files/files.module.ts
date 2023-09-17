@@ -8,9 +8,9 @@ import { FilesService } from './files.service';
   controllers: [FilesController],
   providers: [FilesService],
   imports: [
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', '/static'),
-    }),
+    // ServeStaticModule.forRoot({
+    //   rootPath: join(__dirname, '..', '..', 'uploads'),
+    // }),
   ],
 })
 export class FilesModule {}

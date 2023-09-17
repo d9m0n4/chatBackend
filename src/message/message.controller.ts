@@ -38,9 +38,10 @@ export class MessageController {
     @Req() req,
     @UploadedFiles() files: Array<Express.Multer.File>,
   ) {
-    const filesUrls = await this.filesService.save(files);
-
-    if (files) {
+    console.log(files);
+    const newFiles = await this.filesService.filterFiles(files);
+    if (newFiles) {
+      const filesUrls = await this.filesService.save(newFiles);
       createMessageDto.files = filesUrls.map((file) => file.url);
     }
 
