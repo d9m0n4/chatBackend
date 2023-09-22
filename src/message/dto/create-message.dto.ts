@@ -1,5 +1,5 @@
-import { Attachment } from '../../attachment/entities/attachment.entity';
 import { IsNotEmpty } from 'class-validator';
+import { FileM } from '../../files/types/FileM';
 
 export class CreateMessageDto {
   @IsNotEmpty()
@@ -8,7 +8,5 @@ export class CreateMessageDto {
   @IsNotEmpty()
   content: string;
 
-  files?: any;
-
-  attachments?: Attachment[];
+  files?: FileM[];
 }

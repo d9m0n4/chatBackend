@@ -2,37 +2,27 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  ManyToMany,
-  OneToMany,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { User } from '../../user/entities/user.entity';
 import { Message } from '../../message/entities/message.entity';
-import { Dialog } from '../../dialog/entities/dialog.entity';
-import { File } from '../../files/entities/file.entity';
 
 @Entity()
-export class User {
+export class File {
   @PrimaryGeneratedColumn()
   id?: number;
 
   @Column()
-  name?: string;
-
-  @Column({ unique: true })
-  nickName?: string;
-
-  @OneToMany(() => File, (file) => file.user)
-  avatarUrl?: File;
+  url: string;
 
   @Column()
-  password?: string;
+  ext: string;
 
-  @ManyToMany(() => Dialog, (dialog) => dialog.users)
-  dialogs: Dialog[];
-
-  @OneToMany(() => Message, (message) => message.user)
-  message: Message[];
+  @Column()
+  name: string;
 
   @CreateDateColumn({
     type: 'timestamp',
@@ -46,4 +36,11 @@ export class User {
     onUpdate: 'CURRENT_TIMESTAMP(6)',
   })
   updated_at: Date;
+
+  @ManyToOne(() => User, (user) => user.avatarUrl)
+  user: User;
+
+  @ManyToOne(() => Message)
+  @JoinColumn()
+  message: Message;
 }

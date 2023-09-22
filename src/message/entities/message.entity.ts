@@ -2,17 +2,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Dialog } from '../../dialog/entities/dialog.entity';
-import { JoinColumn } from 'typeorm';
-import { Attachment } from '../../attachment/entities/attachment.entity';
-import { Exclude, Transform } from 'class-transformer';
+import { File } from '../../files/entities/file.entity';
 
 @Entity()
 export class Message {
@@ -22,8 +20,8 @@ export class Message {
   @Column({ nullable: false })
   content: string;
 
-  @OneToMany(() => Attachment, (attach) => attach.message)
-  attachments: Attachment[];
+  @OneToMany(() => File, (file) => file.message)
+  files: File[];
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'userId' })
@@ -38,9 +36,6 @@ export class Message {
     default: () => 'CURRENT_TIMESTAMP(6)',
   })
   created_at: Date;
-
-  @Column('varchar', { nullable: true, array: true })
-  files: string[];
 
   @UpdateDateColumn({
     type: 'timestamp',

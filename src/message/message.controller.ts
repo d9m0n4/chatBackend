@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  MaxFileSizeValidator,
+  ParseFilePipe,
   Post,
   Query,
   Req,
@@ -36,20 +38,28 @@ export class MessageController {
   async create(
     @Body() createMessageDto: CreateMessageDto,
     @Req() req,
-    @UploadedFiles() files: Array<Express.Multer.File>,
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: 1024 * 1024 * 10,
+            message: 'kek',
+          }),
+        ],
+      }),
+    )
+    files: Array<Express.Multer.File>,
   ) {
-    console.log(files);
     const newFiles = await this.filesService.filterFiles(files);
     if (newFiles) {
       const filesUrls = await this.filesService.save(newFiles);
-      createMessageDto.files = filesUrls.map((file) => file.url);
+      createMessageDto.files = filesUrls;
     }
 
     const message = await this.messageService.create(
       createMessageDto,
       req.user.id,
     );
-    console.log(message);
 
     this.eventEmitter.emit('message_create', message);
     return message;

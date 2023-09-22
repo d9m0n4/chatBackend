@@ -10,13 +10,10 @@ import { DialogModule } from './dialog/dialog.module';
 import { Dialog } from './dialog/entities/dialog.entity';
 import { MessageModule } from './message/message.module';
 import { Message } from './message/entities/message.entity';
-import { AttachmentModule } from './attachment/attachment.module';
-import { Attachment } from './attachment/entities/attachment.entity';
-import { MulterModule } from '@nestjs/platform-express';
-import { AppGateway } from './gateway/app.gateway';
 import { GatewayModule } from './gateway/app.gateway.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { FilesModule } from './files/files.module';
+import { File } from './files/entities/file.entity';
 
 @Module({
   imports: [
@@ -30,7 +27,7 @@ import { FilesModule } from './files/files.module';
         database: process.env.DB_NAME,
         username: process.env.DB_USER_NAME,
         password: process.env.DB_PASSWORD,
-        entities: [User, Dialog, Message, Attachment],
+        entities: [User, Dialog, Message, File],
         synchronize: true,
       }),
       inject: [ConfigService],
@@ -38,7 +35,6 @@ import { FilesModule } from './files/files.module';
     EventEmitterModule.forRoot(),
     UserModule,
     AuthModule,
-    AttachmentModule,
     MessageModule,
     DialogModule,
     GatewayModule,

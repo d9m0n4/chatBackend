@@ -6,9 +6,10 @@ import { Message } from './entities/message.entity';
 import { Dialog } from '../dialog/entities/dialog.entity';
 import { User } from '../user/entities/user.entity';
 import { FilesService } from 'src/files/files.service';
+import { File } from '../files/entities/file.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Message, Dialog, User])],
+  imports: [TypeOrmModule.forFeature([Message, Dialog, User, File])],
   controllers: [MessageController],
   providers: [MessageService, FilesService],
   exports: [MessageService],
