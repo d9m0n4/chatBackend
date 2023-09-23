@@ -46,9 +46,10 @@ export class MessageController {
             message: 'kek',
           }),
         ],
+        fileIsRequired: false,
       }),
     )
-    files: Array<Express.Multer.File>,
+    files?: Array<Express.Multer.File>,
   ) {
     const newFiles = await this.filesService.filterFiles(files);
     if (newFiles) {

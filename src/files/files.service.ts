@@ -29,10 +29,11 @@ export class FilesService {
           throw new InternalServerErrorException('ошибка записи файлов');
         }
         return {
+          ...file,
           url: `/uploads/${file.originalname}`,
           name: file.originalname,
           ext: file.originalname.split('.').pop(),
-          ...file,
+          fileType: file.mimetype.split('/').pop(),
         };
       }),
     );
@@ -45,38 +46,38 @@ export class FilesService {
       files.map(async (file) => {
         const mimetype = file.mimetype;
         const fileType = file.mimetype.split('/').pop();
-        const fileName = this.generateFileName();
+        const fileName = await this.generateFileName();
         const type = file.originalname.split('.').pop();
 
         if (mimetype.includes('image')) {
           if (fileType != 'svg+xml') {
             const buffer = await this.convertToWebP(file.buffer);
             return {
+              ...file,
               buffer,
               originalname: `${fileName}.webp`,
               mimetype,
-              ...file,
             };
           }
           return {
+            ...file,
             buffer: file.buffer,
             originalname: `${fileName}.svg`,
             mimetype,
-            ...file,
           };
         }
         return {
+          ...file,
           buffer: file.buffer,
           originalname: `${fileName}.${type}`,
           mimetype,
-          ...file,
         };
       }),
     );
     return newFiles;
   }
 
-  generateFileName() {
+  async generateFileName() {
     return Array(18)
       .fill(null)
       .map(() => Math.round(Math.random() * 16).toString(16))

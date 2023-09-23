@@ -24,6 +24,9 @@ export class File {
   @Column()
   name: string;
 
+  @Column({ nullable: true })
+  fileType: string;
+
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP(6)',

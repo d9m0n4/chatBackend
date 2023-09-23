@@ -35,18 +35,22 @@ export class MessageService {
     message.content = createMessageDto.content;
 
     const newMessage = await this.messageRepository.save(message);
+
+    const attachments = await Promise.all(
+      createMessageDto.files.map(async (attachmentItem) => {
+        const attachment = new File();
+        attachment.message = newMessage;
+        attachment.url = attachmentItem.url;
+        attachment.user = user;
+        attachment.ext = attachmentItem.ext;
+        attachment.name = attachmentItem.name;
+        attachment.fileType = attachmentItem.fileType;
+        return this.fileRepository.save(attachment);
+      }),
+    );
+
     dialog.latestMessage = newMessage.id;
     await this.dialogRepository.save(dialog);
-
-    for (const attachmentItem of createMessageDto.files) {
-      const attachment = new File();
-      attachment.message = newMessage;
-      attachment.url = attachmentItem.url;
-      attachment.user = user;
-      attachment.ext = attachmentItem.ext;
-      attachment.name = attachmentItem.name;
-      await this.fileRepository.save(attachment);
-    }
 
     return {
       ...newMessage,
@@ -55,6 +59,7 @@ export class MessageService {
         ...dialog,
         users: dialog.users.map((user) => new ReturnUserDto(user)),
       },
+      files: attachments,
     };
   }
 
@@ -87,8 +92,6 @@ export class MessageService {
         .getMany();
 
       const groupedMessages = {};
-
-      console.log(messages);
 
       messages.reverse().forEach((message) => {
         const date = message.created_at.toISOString().substr(0, 10);
