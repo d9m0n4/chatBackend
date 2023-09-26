@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Message } from '../../message/entities/message.entity';
+import { Dialog } from '../../dialog/entities/dialog.entity';
 
 @Entity()
 export class File {
@@ -46,4 +47,8 @@ export class File {
   @ManyToOne(() => Message)
   @JoinColumn()
   message: Message;
+
+  @ManyToOne(() => Dialog)
+  @JoinColumn()
+  dialog: Dialog;
 }

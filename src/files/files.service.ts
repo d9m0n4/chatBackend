@@ -3,14 +3,29 @@ import { access, mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 import * as sharp from 'sharp';
 import { FileM } from './types/FileM';
+import { Repository } from 'typeorm';
+import { File } from './entities/file.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class FilesService {
-  constructor() {}
+  constructor(
+    @InjectRepository(File)
+    private fileRepository: Repository<File>,
+  ) {}
 
-  convertToWebP(file: Buffer) {
-    return sharp(file).webp().toBuffer();
+  async getByDialogId(dialogId: number) {
+    return this.fileRepository
+      .createQueryBuilder('file')
+      .leftJoinAndSelect('file.dialog', 'dialog')
+      .where('dialog.id = :dialogId', { dialogId })
+      .select([
+        'file',
+        // 'dialog.id'
+      ])
+      .getMany();
   }
+
   async save(files: Array<Express.Multer.File>): Promise<FileM[]> {
     const filesFolder = join(__dirname, '..', '..', 'uploads');
 
@@ -82,5 +97,9 @@ export class FilesService {
       .fill(null)
       .map(() => Math.round(Math.random() * 16).toString(16))
       .join('');
+  }
+
+  convertToWebP(file: Buffer) {
+    return sharp(file).webp().toBuffer();
   }
 }

@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Message } from '../../message/entities/message.entity';
+import { File } from '../../files/entities/file.entity';
 
 @Entity()
 export class Dialog {
@@ -24,6 +25,9 @@ export class Dialog {
 
   @OneToMany(() => Message, (message) => message.dialog)
   messages: Message[];
+
+  @OneToMany(() => File, (file) => file.dialog)
+  files: File[];
 
   @Column({ nullable: true })
   latestMessage: number | null;

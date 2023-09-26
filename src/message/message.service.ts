@@ -45,6 +45,7 @@ export class MessageService {
         attachment.ext = attachmentItem.ext;
         attachment.name = attachmentItem.name;
         attachment.fileType = attachmentItem.fileType;
+        attachment.dialog = dialog;
         return this.fileRepository.save(attachment);
       }),
     );
