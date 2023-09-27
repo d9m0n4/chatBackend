@@ -7,21 +7,15 @@ import {
   Post,
   Query,
   Req,
-  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import {
-  FileFieldsInterceptor,
-  MulterModule,
-} from '@nestjs/platform-express/multer';
-import { diskStorage } from 'multer';
 import { FilesService } from 'src/files/files.service';
 
 @Controller('messages')
@@ -53,8 +47,7 @@ export class MessageController {
   ) {
     const newFiles = await this.filesService.filterFiles(files);
     if (newFiles) {
-      const filesUrls = await this.filesService.save(newFiles);
-      createMessageDto.files = filesUrls;
+      createMessageDto.files = await this.filesService.save(newFiles);
     }
 
     const message = await this.messageService.create(

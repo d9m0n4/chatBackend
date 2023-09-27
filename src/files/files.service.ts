@@ -2,7 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { access, mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 import * as sharp from 'sharp';
-import { FileM } from './types/FileM';
+import { FileM, FileWithName } from './types/FileM';
 import { Repository } from 'typeorm';
 import { File } from './entities/file.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -26,7 +26,7 @@ export class FilesService {
       .getMany();
   }
 
-  async save(files: Array<Express.Multer.File>): Promise<FileM[]> {
+  async save(files: FileWithName[]): Promise<FileM[]> {
     const filesFolder = join(__dirname, '..', '..', 'uploads');
 
     try {
@@ -38,16 +38,16 @@ export class FilesService {
     const res = await Promise.all(
       files.map(async (file) => {
         try {
-          await writeFile(join(filesFolder, file.originalname), file.buffer);
+          await writeFile(join(filesFolder, file.name), file.buffer);
         } catch (error) {
           console.log(error);
           throw new InternalServerErrorException('ошибка записи файлов');
         }
         return {
           ...file,
-          url: `/uploads/${file.originalname}`,
-          name: file.originalname,
-          ext: file.originalname.split('.').pop(),
+          url: `/uploads/${file.name}`,
+          name: file.name,
+          ext: file.name.split('.').pop(),
           fileType: file.mimetype.split('/').pop(),
         };
       }),
@@ -70,21 +70,21 @@ export class FilesService {
             return {
               ...file,
               buffer,
-              originalname: `${fileName}.webp`,
+              name: `${fileName}.webp`,
               mimetype,
             };
           }
           return {
             ...file,
             buffer: file.buffer,
-            originalname: `${fileName}.svg`,
+            name: `${fileName}.svg`,
             mimetype,
           };
         }
         return {
           ...file,
           buffer: file.buffer,
-          originalname: `${fileName}.${type}`,
+          name: `${fileName}.${type}`,
           mimetype,
         };
       }),

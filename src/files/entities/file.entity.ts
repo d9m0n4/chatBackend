@@ -26,6 +26,12 @@ export class File {
   name: string;
 
   @Column({ nullable: true })
+  originalName: string;
+
+  @Column({ nullable: true })
+  size: number;
+
+  @Column({ nullable: true })
   fileType: string;
 
   @CreateDateColumn({

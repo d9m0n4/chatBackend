@@ -16,15 +16,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
-  @Post()
-  @UseInterceptors(FilesInterceptor('file', 3))
-  async upload(
-    @UploadedFiles() files: Array<Express.Multer.File>,
-    // @Query('folder') folder?: string,
-  ) {
-    return this.filesService.save(files);
-  }
-
   @UseGuards(JwtAuthGuard)
   @Get()
   async getFilesByDialogId(@Query('dialogId') dialogId: number, @Req() req) {
