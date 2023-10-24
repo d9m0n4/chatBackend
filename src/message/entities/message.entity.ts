@@ -17,6 +17,9 @@ export class Message {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ default: false })
+  isRead: boolean;
+
   @Column({ nullable: false })
   content: string;
 

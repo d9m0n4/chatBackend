@@ -9,6 +9,7 @@ import { In, Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
 import { Message } from '../message/entities/message.entity';
 import { ReturnUserDto } from '../user/dto/return-user.dto';
+import { use } from 'passport';
 
 @Injectable()
 export class DialogService {
@@ -60,23 +61,40 @@ export class DialogService {
     try {
       const dialogs = await this.dialogRepository
         .createQueryBuilder('dialog')
-        .leftJoinAndSelect('dialog.users', 'user')
-        .leftJoinAndSelect('dialog.users', 'dialog_users')
+        .leftJoinAndSelect('dialog.users', 'users')
+        .leftJoin('dialog.users', 'user')
+        .leftJoin('dialog.messages', 'messages')
+        .leftJoin('messages.user', 'messagesUsers')
         .leftJoinAndMapOne(
           'dialog.latestMessage',
           Message,
           'message',
           'message.id = dialog.latestMessage',
         )
+        .leftJoin('message.user', 'lastMessageUser')
+        .addSelect([
+          'lastMessageUser.id',
+          'users',
+          'messages',
+          'messagesUsers.id',
+        ])
         .where('user.id = :userId', { userId })
         .orderBy('dialog.updated_at', 'DESC')
         .getMany();
 
       return dialogs.map((dialog) => {
         const partner = dialog.users.find((user) => user.id !== userId);
+        const partnerMessages = dialog.messages.filter(
+          (message) => message.user.id !== userId,
+        );
+        const unreadMessagesCount = partnerMessages.reduce(
+          (count, message) => (message.isRead === false ? count + 1 : count),
+          0,
+        );
         return {
           ...dialog,
           partner: new ReturnUserDto(partner),
+          unreadMessagesCount,
           users: undefined,
         };
       });
