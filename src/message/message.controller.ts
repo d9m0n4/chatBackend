@@ -3,7 +3,9 @@ import {
   Controller,
   Get,
   MaxFileSizeValidator,
+  Param,
   ParseFilePipe,
+  Patch,
   Post,
   Query,
   Req,
@@ -63,5 +65,19 @@ export class MessageController {
   @Get()
   getAllMessagesByDialogId(@Query('dialogId') dialogId: number) {
     return this.messageService.getAllMessagesByDialogId(dialogId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('/update')
+  async updateMessagesStatus(@Body() body, @Req() req) {
+    const updatedMessages = await this.messageService.updateMessagesStatus(
+      body.dialogId,
+      req.user.id,
+    );
+    this.eventEmitter.emit('update_messages', {
+      dialog: updatedMessages.dialog,
+      userId: req.user.id,
+    });
+    return updatedMessages;
   }
 }

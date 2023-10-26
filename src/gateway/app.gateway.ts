@@ -123,6 +123,27 @@ export class AppGateway
     }
   }
 
+  @OnEvent('update_messages')
+  handleUpdateMessagesStatus({
+    dialog,
+    userId,
+  }: {
+    dialog: Dialog;
+    userId: number;
+  }) {
+    if (dialog) {
+      dialog.users.forEach((user) => {
+        const socket = this.sessions.getUserSocket(user.id);
+        if (socket) {
+          socket.emit('update_messages_status', {
+            userId,
+            dialogId: dialog.id,
+          });
+        }
+      });
+    }
+  }
+
   @OnEvent('dialog_create')
   handleDialogCreate(payload) {
     if (payload) {

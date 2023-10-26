@@ -109,4 +109,25 @@ export class MessageService {
       console.log(e);
     }
   }
+
+  async updateMessagesStatus(dialogId: number, userId: number) {
+    try {
+      const result = await this.messageRepository
+        .createQueryBuilder('message')
+        .update(Message)
+        .set({ isRead: true })
+        .where('dialogId = :dialogId', { dialogId })
+        .andWhere('userId != :userId', { userId })
+        .execute();
+
+      const dialog = await this.dialogRepository.findOne({
+        where: { id: dialogId },
+        relations: { users: true },
+      });
+      return {
+        ...result,
+        dialog,
+      };
+    } catch (e) {}
+  }
 }
