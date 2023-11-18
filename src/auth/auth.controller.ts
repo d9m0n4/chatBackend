@@ -2,10 +2,14 @@ import {
   Body,
   Controller,
   Get,
+  HttpStatus,
+  InternalServerErrorException,
   Post,
   Request,
   Res,
+  UnauthorizedException,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -20,19 +24,38 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('signIn')
   async signIn(@Request() req, @Res({ passthrough: true }) response: Response) {
-    const user = await this.authService.signIn(req.user);
-    response.cookie('jwt', user.accessToken, { httpOnly: true, secure: false });
-    response.cookie('refresh', user.refreshToken, {
-      httpOnly: true,
-      secure: false,
-    });
-    return user;
+    try {
+      if (!req.user) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+      const user = await this.authService.signIn(req.user);
+      response.cookie('jwt', user.accessToken, {
+        httpOnly: true,
+        secure: true,
+      });
+      response.cookie('refresh', user.refreshToken, {
+        httpOnly: true,
+        secure: true,
+      });
+
+      return req.user;
+    } catch (error) {
+      throw new InternalServerErrorException('Error signing in');
+    }
   }
 
   @Post('signUp')
   async signUp(@Body() dto: CreateUserDto) {
     return await this.authService.sigUp(dto);
   }
+
+  @Post('signOut')
+  signOut(@Res() response: Response) {
+    response.clearCookie('jwt');
+    response.clearCookie('refresh');
+    response.status(HttpStatus.OK).send('ok');
+  }
+
   @UseGuards(RefreshJwtAuthGuard)
   @Get('refresh')
   async refreshToken(

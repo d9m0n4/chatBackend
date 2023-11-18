@@ -132,6 +132,14 @@ export class AppGateway
     userId: number;
   }) {
     if (dialog) {
+      // const currentUser = dialog.users.find(user => user.id === userId)
+      // const socket = this.sessions.getUserSocket(currentUser.id)
+      // if (socket) {
+      //   socket.emit('update_messages_status', {
+      //     userId,
+      //     dialogId: dialog.id,
+      //   });
+      // }
       dialog.users.forEach((user) => {
         const socket = this.sessions.getUserSocket(user.id);
         if (socket) {
