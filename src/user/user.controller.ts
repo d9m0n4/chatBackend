@@ -9,16 +9,23 @@ import {
   UseGuards,
   Query,
   Req,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesService } from '../files/files.service';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private filesService: FilesService,
+  ) {}
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
@@ -46,5 +53,19 @@ export class UserController {
   @Get('me')
   getMe(@Req() req) {
     return this.userService.getMe(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('update')
+  @UseInterceptors(FileInterceptor('avatar'))
+  async update(
+    @Req() req,
+    @Body() updateUserDto: UpdateUserDto,
+    @UploadedFile() avatar: Express.Multer.File,
+  ) {
+    const sharpedFile = await this.filesService.filterFiles([avatar]);
+    const savedFiles = await this.filesService.save(sharpedFile);
+    updateUserDto.avatarUrl = savedFiles[0];
+    // return this.userService.update(req.user.id, updateUserDto);
   }
 }

@@ -9,10 +9,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refreshToken.strategy';
+import { FilesService } from '../files/files.service';
+import { File } from '../files/entities/file.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, File]),
     PassportModule,
     JwtModule.register({
       global: true,
@@ -27,6 +29,7 @@ import { RefreshTokenStrategy } from './strategies/refreshToken.strategy';
     JwtStrategy,
     RefreshTokenStrategy,
     UserService,
+    FilesService,
   ],
   exports: [AuthService],
 })
