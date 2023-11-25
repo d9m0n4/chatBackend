@@ -7,6 +7,7 @@ import { Dialog } from '../dialog/entities/dialog.entity';
 import { User } from '../user/entities/user.entity';
 import { ReturnUserDto } from '../user/dto/return-user.dto';
 import { File } from '../files/entities/file.entity';
+import { isArray } from 'class-validator';
 
 @Injectable()
 export class MessageService {
@@ -36,21 +37,23 @@ export class MessageService {
 
     const newMessage = await this.messageRepository.save(message);
 
-    const attachments = await Promise.all(
-      createMessageDto.files.map(async (attachmentItem) => {
-        const attachment = new File();
-        attachment.message = newMessage;
-        attachment.url = attachmentItem.url;
-        attachment.user = user;
-        attachment.ext = attachmentItem.ext;
-        attachment.name = attachmentItem.name;
-        attachment.fileType = attachmentItem.fileType;
-        attachment.dialog = dialog;
-        attachment.size = attachmentItem.size;
-        attachment.originalName = attachmentItem.originalname;
-        return this.fileRepository.save(attachment);
-      }),
-    );
+    const attachments = isArray(createMessageDto.files)
+      ? await Promise.all(
+          createMessageDto.files.map(async (attachmentItem) => {
+            const attachment = new File();
+            attachment.message = newMessage;
+            attachment.url = attachmentItem.url;
+            attachment.user = user;
+            attachment.ext = attachmentItem.ext;
+            attachment.name = attachmentItem.name;
+            attachment.fileType = attachmentItem.fileType;
+            attachment.dialog = dialog;
+            attachment.size = attachmentItem.size;
+            attachment.originalName = attachmentItem.originalname;
+            return this.fileRepository.save(attachment);
+          }),
+        )
+      : null;
 
     dialog.latestMessage = newMessage.id;
     await this.dialogRepository.save(dialog);
@@ -68,12 +71,12 @@ export class MessageService {
 
   async getAllMessagesByDialogId(dialogId: number) {
     try {
-      const messages = await this.messageRepository
+      const messagesData = await this.messageRepository
         .createQueryBuilder('message')
         .leftJoinAndSelect('message.dialog', 'dialog')
         .leftJoinAndSelect('dialog.users', 'users')
         .leftJoinAndSelect('message.user', 'user')
-        .leftJoinAndSelect('user.avatarUrl', 'userAvatar')
+        .leftJoinAndSelect('user.avatar', 'userAvatar')
         .leftJoinAndSelect('message.files', 'files')
         .where('dialog.id = :dialogId', { dialogId })
         .orderBy('message.created_at', 'DESC')
@@ -84,15 +87,25 @@ export class MessageService {
           'user.id',
           'user.nickName',
           'user.name',
-          'userAvatar.url AS userAvatar',
+          'userAvatar.url',
           'dialog',
           'users.id',
-          // 'users.avatarUrl',
+          'users.avatar',
           'users.name',
           'users.nickName',
           'files',
         ])
         .getMany();
+
+      const messages = messagesData.map((message) => {
+        return {
+          ...message,
+          user: {
+            ...message.user,
+            avatar: message.user.avatar ? message.user.avatar.url : null,
+          },
+        };
+      });
 
       const groupedMessages = {};
 

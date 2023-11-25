@@ -10,11 +10,12 @@ import { User } from '../user/entities/user.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refreshToken.strategy';
 import { FilesService } from '../files/files.service';
+import { UserAvatar } from '../user/entities/userAvatar.entity';
 import { File } from '../files/entities/file.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, File]),
+    TypeOrmModule.forFeature([User, UserAvatar, File]),
     PassportModule,
     JwtModule.register({
       global: true,

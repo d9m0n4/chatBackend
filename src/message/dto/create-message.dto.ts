@@ -8,5 +8,5 @@ export class CreateMessageDto {
   @IsNotEmpty()
   content: string;
 
-  files?: FileM[];
+  files?: FileM[] | FileM;
 }

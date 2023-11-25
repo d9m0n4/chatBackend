@@ -47,7 +47,7 @@ export class File {
   })
   updated_at: Date;
 
-  @ManyToOne(() => User, (user) => user.avatarUrl)
+  @ManyToOne(() => User, (user) => user.avatar)
   user: User;
 
   @ManyToOne(() => Message)

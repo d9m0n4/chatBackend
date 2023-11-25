@@ -14,6 +14,7 @@ import { GatewayModule } from './gateway/app.gateway.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { FilesModule } from './files/files.module';
 import { File } from './files/entities/file.entity';
+import { UserAvatar } from './user/entities/userAvatar.entity';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { File } from './files/entities/file.entity';
         database: process.env.DB_NAME,
         username: process.env.DB_USER_NAME,
         password: process.env.DB_PASSWORD,
-        entities: [User, Dialog, Message, File],
+        entities: [User, Dialog, Message, File, UserAvatar],
         synchronize: true,
       }),
       inject: [ConfigService],

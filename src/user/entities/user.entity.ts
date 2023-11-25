@@ -2,14 +2,16 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToMany,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Message } from '../../message/entities/message.entity';
 import { Dialog } from '../../dialog/entities/dialog.entity';
-import { File } from '../../files/entities/file.entity';
+import { UserAvatar } from './userAvatar.entity';
 
 @Entity()
 export class User {
@@ -22,8 +24,9 @@ export class User {
   @Column({ unique: true })
   nickName?: string;
 
-  @OneToMany(() => File, (file) => file.user)
-  avatarUrl?: File;
+  @OneToOne(() => UserAvatar, (avatar) => avatar.id, { cascade: true })
+  @JoinColumn({ name: 'avatar' })
+  avatar?: UserAvatar;
 
   @Column()
   password?: string;

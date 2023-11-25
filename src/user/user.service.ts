@@ -10,15 +10,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Like, Repository } from 'typeorm';
 import { ReturnUserDto } from './dto/return-user.dto';
-import { File } from '../files/entities/file.entity';
+import { UserAvatar } from './entities/userAvatar.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    @InjectRepository(File)
-    private filesRepository: Repository<File>,
+    @InjectRepository(UserAvatar)
+    private userAvatarRepository: Repository<UserAvatar>,
   ) {}
 
   async create(userDto: CreateUserDto) {
@@ -71,12 +71,9 @@ export class UserService {
     try {
       const userData = await this.userRepository.findOne({
         where: { id: user.id },
-        relations: { avatarUrl: true },
+        relations: { avatar: true },
       });
-      return new ReturnUserDto({
-        ...userData,
-        avatarUrl: userData.avatarUrl[0],
-      });
+      return new ReturnUserDto({ ...userData, avatar: userData.avatar });
     } catch (e) {
       console.log(e);
       return new UnauthorizedException();
@@ -89,22 +86,16 @@ export class UserService {
       if (!user) {
         return;
       }
-      if (user.avatarUrl) {
-        await this.filesRepository.remove(user.avatarUrl);
+      if (user.avatar) {
+        await this.userAvatarRepository.remove(user.avatar);
       }
-      const file = new File();
-      file.url = updateUserDto.avatarUrl.url;
-      file.user = user;
-      file.ext = updateUserDto.avatarUrl.ext;
-      file.name = updateUserDto.avatarUrl.name;
-      file.fileType = updateUserDto.avatarUrl.fileType;
-      file.size = updateUserDto.avatarUrl.size;
-      file.originalName = updateUserDto.avatarUrl.originalname;
-
       user.nickName = updateUserDto.nickName;
       user.name = updateUserDto.name;
-      user.avatarUrl = await this.filesRepository.save(file);
 
+      const file = new UserAvatar();
+      file.url = updateUserDto.avatarUrl;
+
+      user.avatar = await this.userAvatarRepository.save(file);
       return new ReturnUserDto(await this.userRepository.save(user));
     } catch (e) {
       console.log(e);

@@ -6,6 +6,7 @@ import { FileM, FileWithName } from './types/FileM';
 import { Repository } from 'typeorm';
 import { File } from './entities/file.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { isArray } from 'class-validator';
 
 @Injectable()
 export class FilesService {
@@ -26,7 +27,10 @@ export class FilesService {
       .getMany();
   }
 
-  async save(files: FileWithName[]): Promise<FileM[]> {
+  async save(entry: FileWithName | Array<FileWithName>): Promise<FileM[]> {
+    if (!entry) {
+      return;
+    }
     const filesFolder = join(__dirname, '..', '..', 'uploads');
 
     try {
@@ -35,61 +39,77 @@ export class FilesService {
       await mkdir(filesFolder, { recursive: true });
     }
 
-    const res = await Promise.all(
-      files.map(async (file) => {
-        try {
-          await writeFile(join(filesFolder, file.name), file.buffer);
-        } catch (error) {
-          console.log(error);
-          throw new InternalServerErrorException('ошибка записи файлов');
-        }
-        return {
-          ...file,
-          url: `/uploads/${file.name}`,
-          name: file.name,
-          ext: file.name.split('.').pop(),
-          fileType: file.mimetype.split('/').pop(),
-        };
-      }),
-    );
-
-    return res;
+    if (isArray(entry)) {
+      return await Promise.all(
+        entry.map(async (file) => {
+          return await this.writeFile(file, filesFolder);
+        }),
+      );
+    } else {
+      return Array(await this.writeFile(entry, filesFolder));
+    }
   }
 
-  async filterFiles(files: Array<Express.Multer.File>) {
-    const newFiles = await Promise.all(
-      files.map(async (file) => {
-        const mimetype = file.mimetype;
-        const fileType = file.mimetype.split('/').pop();
-        const fileName = await this.generateFileName();
-        const type = file.originalname.split('.').pop();
+  async writeFile(file, folder) {
+    try {
+      await writeFile(join(folder, file.name), file.buffer);
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('ошибка записи файлов');
+    }
+    return {
+      ...file,
+      url: `/uploads/${file.name}`,
+      name: file.name,
+      ext: file.name.split('.').pop(),
+      fileType: file.mimetype.split('/').pop(),
+    };
+  }
 
-        if (mimetype.includes('image')) {
-          if (fileType != 'svg+xml') {
-            const buffer = await this.convertToWebP(file.buffer);
-            return {
-              ...file,
-              buffer,
-              name: `${fileName}.webp`,
-              mimetype,
-            };
-          }
-          return {
-            ...file,
-            buffer: file.buffer,
-            name: `${fileName}.svg`,
-            mimetype,
-          };
-        }
+  async createFile(file) {
+    if (!file) {
+      return;
+    }
+    const mimetype = file.mimetype;
+    const fileType = file.mimetype.split('/').pop();
+    const fileName = await this.generateFileName();
+    const type = file.originalname.split('.').pop();
+
+    if (mimetype.includes('image')) {
+      if (fileType != 'svg+xml') {
+        const buffer = await this.convertToWebP(file.buffer);
         return {
           ...file,
-          buffer: file.buffer,
-          name: `${fileName}.${type}`,
+          buffer,
+          name: `${fileName}.webp`,
           mimetype,
         };
-      }),
-    );
-    return newFiles;
+      }
+      return {
+        ...file,
+        buffer: file.buffer,
+        name: `${fileName}.svg`,
+        mimetype,
+      };
+    }
+    return {
+      ...file,
+      buffer: file.buffer,
+      name: `${fileName}.${type}`,
+      mimetype,
+    };
+  }
+
+  async filterFiles(entry: Array<Express.Multer.File> | Express.Multer.File) {
+    if (isArray(entry)) {
+      return await Promise.all(
+        entry.map(async (file) => {
+          return await this.createFile(file);
+        }),
+      );
+    } else {
+      return await this.createFile(entry);
+    }
   }
 
   async generateFileName() {
