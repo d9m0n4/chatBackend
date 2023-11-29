@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -84,8 +85,18 @@ export class UserService {
     try {
       const user = await this.userRepository.findOne({ where: { id: userId } });
       if (!user) {
-        return;
+        return new NotFoundException('Пользователь не найден');
       }
+
+      const isNickNameTaken = await this.userRepository.findOne({
+        where: { nickName: updateUserDto.nickName },
+        select: ['id'],
+      });
+
+      if (isNickNameTaken && isNickNameTaken.id !== userId) {
+        return new BadRequestException('Никнейм уже занят');
+      }
+
       if (user.avatar) {
         await this.userAvatarRepository.remove(user.avatar);
       }
@@ -98,8 +109,7 @@ export class UserService {
       user.avatar = await this.userAvatarRepository.save(file);
       return new ReturnUserDto(await this.userRepository.save(user));
     } catch (e) {
-      console.log(e);
-      return new BadRequestException();
+      return new BadRequestException(e);
     }
   }
 }

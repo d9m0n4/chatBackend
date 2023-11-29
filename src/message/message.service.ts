@@ -24,6 +24,7 @@ export class MessageService {
   async create(createMessageDto: CreateMessageDto, userId: number) {
     const user = await this.userRepository.findOne({
       where: { id: userId },
+      relations: ['avatar'],
     });
     const dialog = await this.dialogRepository.findOne({
       where: { id: createMessageDto.dialogId },
@@ -60,7 +61,7 @@ export class MessageService {
 
     return {
       ...newMessage,
-      user: new ReturnUserDto(newMessage.user),
+      user: { ...new ReturnUserDto(newMessage.user), avatar: user.avatar.url },
       dialog: {
         ...dialog,
         users: dialog.users.map((user) => new ReturnUserDto(user)),

@@ -64,7 +64,6 @@ export class UserController {
     @UploadedFile() avatar: Express.Multer.File,
   ) {
     const sharpedFile = await this.filesService.filterFiles(avatar);
-    console.log(sharpedFile);
     const savedFiles = await this.filesService.save(sharpedFile);
     updateUserDto.avatarUrl = savedFiles ? savedFiles[0].url : null;
     return this.userService.update(req.user.id, updateUserDto);
