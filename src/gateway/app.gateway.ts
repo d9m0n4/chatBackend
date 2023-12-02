@@ -145,7 +145,7 @@ export class AppGateway
         if (socket) {
           socket.emit('update_messages_status', {
             userId,
-            dialogId: dialog.id,
+            dialog,
           });
         }
       });

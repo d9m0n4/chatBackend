@@ -26,6 +26,7 @@ export class CookieAuthSocketAdapter extends IoAdapter {
         } catch (error) {
           if (error instanceof jwt.TokenExpiredError) {
             socket.emit('refreshToken');
+            socket.disconnect();
             next();
           } else {
             console.error('JWT verification failed:', error);

@@ -63,6 +63,7 @@ export class DialogService {
         .createQueryBuilder('dialog')
         .leftJoinAndSelect('dialog.users', 'users')
         .leftJoin('dialog.users', 'user')
+        .leftJoinAndSelect('users.avatar', 'avatar')
         .leftJoin('dialog.messages', 'messages')
         .leftJoin('messages.user', 'messagesUsers')
         .leftJoinAndMapOne(
@@ -75,6 +76,7 @@ export class DialogService {
         .addSelect([
           'lastMessageUser.id',
           'users',
+          'avatar.url',
           'messages',
           'messagesUsers.id',
         ])
@@ -84,6 +86,7 @@ export class DialogService {
 
       return dialogs.map((dialog) => {
         const partner = dialog.users.find((user) => user.id !== userId);
+
         const partnerMessages = dialog.messages.filter(
           (message) => message.user.id !== userId,
         );
