@@ -1,11 +1,30 @@
-import { Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { User } from '../../user/entities/user.entity';
+import { Message } from './message.entity';
 
 @Entity()
-export class FavoritesMessagesEntity {
+export class FavoritesMessage {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, (user) => user)
+  @ManyToOne(() => User, { nullable: false })
+  @JoinColumn({ name: 'userId' })
   user: User;
+
+  @ManyToOne(() => Message, { nullable: false })
+  @JoinColumn({ name: 'messageId' })
+  message: Message;
+
+  @CreateDateColumn({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP(6)',
+  })
+  created_at: Date;
 }

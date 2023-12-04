@@ -12,6 +12,7 @@ import {
 import { Message } from '../../message/entities/message.entity';
 import { Dialog } from '../../dialog/entities/dialog.entity';
 import { UserAvatar } from './userAvatar.entity';
+import { FavoritesMessage } from '../../message/entities/favoritesMessages.entity';
 
 @Entity()
 export class User {
@@ -36,6 +37,12 @@ export class User {
 
   @OneToMany(() => Message, (message) => message.user)
   message: Message[];
+
+  @OneToMany(
+    () => FavoritesMessage,
+    (favoritesMessage) => favoritesMessage.user,
+  )
+  savedMessages: FavoritesMessage[];
 
   @CreateDateColumn({
     type: 'timestamp',

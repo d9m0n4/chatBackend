@@ -80,4 +80,20 @@ export class MessageController {
     });
     return updatedMessages;
   }
+  @UseGuards(JwtAuthGuard)
+  @Post('/favorites')
+  async addFavoriteMessage(@Body() body, @Req() req) {
+    const data = await this.messageService.addFavoriteMessage(
+      req.user.id,
+      body.message,
+    );
+    return data;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/favorites')
+  async getFavoriteMessages(@Req() req) {
+    const messages = await this.messageService.getFavoriteMessages(req.user.id);
+    return messages;
+  }
 }

@@ -15,6 +15,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { FilesModule } from './files/files.module';
 import { File } from './files/entities/file.entity';
 import { UserAvatar } from './user/entities/userAvatar.entity';
+import { FavoritesMessage } from './message/entities/favoritesMessages.entity';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { UserAvatar } from './user/entities/userAvatar.entity';
         database: process.env.DB_NAME,
         username: process.env.DB_USER_NAME,
         password: process.env.DB_PASSWORD,
-        entities: [User, Dialog, Message, File, UserAvatar],
+        entities: [User, Dialog, Message, File, UserAvatar, FavoritesMessage],
         synchronize: true,
       }),
       inject: [ConfigService],

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Message } from './entities/message.entity';
@@ -8,6 +8,7 @@ import { User } from '../user/entities/user.entity';
 import { ReturnUserDto } from '../user/dto/return-user.dto';
 import { File } from '../files/entities/file.entity';
 import { isArray } from 'class-validator';
+import { FavoritesMessage } from './entities/favoritesMessages.entity';
 
 @Injectable()
 export class MessageService {
@@ -20,6 +21,8 @@ export class MessageService {
     private userRepository: Repository<User>,
     @InjectRepository(File)
     private fileRepository: Repository<File>,
+    @InjectRepository(FavoritesMessage)
+    private favoriteMessageRepository: Repository<FavoritesMessage>,
   ) {}
   async create(createMessageDto: CreateMessageDto, userId: number) {
     const user = await this.userRepository.findOne({
@@ -61,7 +64,10 @@ export class MessageService {
 
     return {
       ...newMessage,
-      user: { ...new ReturnUserDto(newMessage.user), avatar: user.avatar.url },
+      user: {
+        ...new ReturnUserDto(newMessage.user),
+        avatar: user.avatar ? user.avatar.url : null,
+      },
       dialog: {
         ...dialog,
         users: dialog.users.map((user) => new ReturnUserDto(user)),
@@ -70,9 +76,46 @@ export class MessageService {
     };
   }
 
+  async updateMessagesStatus(dialogId: number, userId: number) {
+    try {
+      const result = await this.messageRepository
+        .createQueryBuilder('message')
+        .update(Message)
+        .set({ isRead: true })
+        .where('dialogId = :dialogId', { dialogId })
+        .andWhere('userId != :userId', { userId })
+        .execute();
+
+      const dialog = await this.dialogRepository.findOne({
+        where: { id: dialogId },
+        relations: { users: true },
+      });
+      return {
+        ...result,
+        dialog,
+      };
+    } catch (e) {}
+  }
+
+  async addFavoriteMessage(userId: number, messageId: number) {
+    try {
+      const user = await this.userRepository.findOneBy({ id: userId });
+
+      const message = await this.messageRepository.findOne({
+        where: { id: messageId },
+      });
+      if (!user || !message) {
+        return new BadRequestException();
+      }
+      return await this.favoriteMessageRepository.save({ user, message });
+    } catch (e) {
+      return new BadRequestException(e);
+    }
+  }
+
   async getAllMessagesByDialogId(dialogId: number) {
     try {
-      const messagesData = await this.messageRepository
+      const messages = await this.messageRepository
         .createQueryBuilder('message')
         .leftJoinAndSelect('message.dialog', 'dialog')
         .leftJoinAndSelect('dialog.users', 'users')
@@ -98,50 +141,50 @@ export class MessageService {
         ])
         .getMany();
 
-      const messages = messagesData.map((message) => {
-        return {
-          ...message,
-          user: {
-            ...message.user,
-            avatar: message.user.avatar ? message.user.avatar.url : null,
-          },
-        };
-      });
-
-      const groupedMessages = {};
-
-      messages.reverse().forEach((message) => {
-        const date = message.created_at.toISOString().substr(0, 10);
-        if (!groupedMessages[date]) {
-          groupedMessages[date] = [];
-        }
-        groupedMessages[date].push(message);
-      });
-
-      return groupedMessages;
+      return this.groupMessagesByDate(messages);
     } catch (e) {
       console.log(e);
     }
   }
 
-  async updateMessagesStatus(dialogId: number, userId: number) {
+  async getFavoriteMessages(userId: number) {
     try {
-      const result = await this.messageRepository
-        .createQueryBuilder('message')
-        .update(Message)
-        .set({ isRead: true })
-        .where('dialogId = :dialogId', { dialogId })
-        .andWhere('userId != :userId', { userId })
-        .execute();
+      const messages = await this.favoriteMessageRepository
+        .createQueryBuilder('favoriteMessage')
+        .leftJoinAndSelect('favoriteMessage.message', 'message')
+        .leftJoin('message.user', 'messageUser')
+        .leftJoinAndSelect('message.files', 'files')
+        .leftJoinAndSelect('favoriteMessage.user', 'user')
+        .where('user.id = :userId', { userId })
+        .getMany();
 
-      const dialog = await this.dialogRepository.findOne({
-        where: { id: dialogId },
-        relations: { users: true },
-      });
+      return this.groupMessagesByDate(messages);
+    } catch (e) {
+      return new BadRequestException(e);
+    }
+  }
+
+  groupMessagesByDate(messagesData: Array<Message | FavoritesMessage>) {
+    const groupedMessages = {};
+
+    const messages = messagesData.map((message) => {
       return {
-        ...result,
-        dialog,
+        ...message,
+        user: new ReturnUserDto({
+          ...message.user,
+          avatar: message.user.avatar,
+        }),
       };
-    } catch (e) {}
+    });
+
+    messages.reverse().forEach((message) => {
+      const date = message.created_at.toISOString().substr(0, 10);
+      if (!groupedMessages[date]) {
+        groupedMessages[date] = [];
+      }
+      groupedMessages[date].push(message);
+    });
+
+    return groupedMessages;
   }
 }
