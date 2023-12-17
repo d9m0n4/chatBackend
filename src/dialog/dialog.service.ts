@@ -9,7 +9,6 @@ import { In, Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
 import { Message } from '../message/entities/message.entity';
 import { ReturnUserDto } from '../user/dto/return-user.dto';
-import { use } from 'passport';
 
 @Injectable()
 export class DialogService {

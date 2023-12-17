@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Message } from './entities/message.entity';
@@ -76,6 +81,29 @@ export class MessageService {
     };
   }
 
+  async deleteMessage(
+    userId: number,
+    messageId: number,
+    deleteForAll: boolean,
+  ) {
+    try {
+      const message = await this.messageRepository.findOne({
+        where: { id: messageId },
+        relations: ['dialog'],
+      });
+      if (!message) {
+        return new NotFoundException('Сообщение не найдено');
+      }
+      if (message.user.id !== userId) {
+        return new UnauthorizedException(
+          'Вы не можеье удалить данное сообщение',
+        );
+      }
+      await this.messageRepository.remove(message);
+    } catch (e) {
+      return new BadRequestException(e);
+    }
+  }
   async updateMessagesStatus(dialogId: number, userId: number) {
     try {
       const result = await this.messageRepository
@@ -99,17 +127,26 @@ export class MessageService {
 
   async addFavoriteMessage(userId: number, messageId: number) {
     try {
-      const user = await this.userRepository.findOneBy({ id: userId });
+      const favoriteMessage = await this.favoriteMessageRepository.findOne({
+        where: { message: { id: messageId } },
+      });
 
+      if (favoriteMessage) {
+        return new BadRequestException('Сообщение уже добавлено в избранное');
+      }
+      const user = await this.userRepository.findOneBy({ id: userId });
       const message = await this.messageRepository.findOne({
         where: { id: messageId },
       });
       if (!user || !message) {
-        return new BadRequestException();
+        return new BadRequestException(
+          'Ошибка добавления сообщения в избранное',
+        );
       }
+
       return await this.favoriteMessageRepository.save({ user, message });
     } catch (e) {
-      return new BadRequestException(e);
+      return new BadRequestException(e, { description: 'Ошибка сервера' });
     }
   }
 
@@ -143,20 +180,25 @@ export class MessageService {
 
       return this.groupMessagesByDate(messages);
     } catch (e) {
-      console.log(e);
+      return new BadRequestException(e);
     }
   }
 
   async getFavoriteMessages(userId: number) {
     try {
-      const messages = await this.favoriteMessageRepository
+      const favoriteMessages = await this.favoriteMessageRepository
         .createQueryBuilder('favoriteMessage')
         .leftJoinAndSelect('favoriteMessage.message', 'message')
-        .leftJoin('message.user', 'messageUser')
+        .leftJoinAndSelect('message.user', 'messageUser')
+        .leftJoinAndSelect('messageUser.avatar', 'avatar')
         .leftJoinAndSelect('message.files', 'files')
-        .leftJoinAndSelect('favoriteMessage.user', 'user')
+        .leftJoin('favoriteMessage.user', 'user')
         .where('user.id = :userId', { userId })
         .getMany();
+
+      const messages = favoriteMessages.map((m) => {
+        return { ...m.message, created_at: m.created_at };
+      });
 
       return this.groupMessagesByDate(messages);
     } catch (e) {
