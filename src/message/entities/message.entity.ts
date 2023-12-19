@@ -23,6 +23,9 @@ export class Message {
   @Column({ nullable: false })
   content: string;
 
+  @Column('int', { array: true, default: [] })
+  deletedForUsers: number[];
+
   @OneToMany(() => File, (file) => file.message)
   files: File[];
 

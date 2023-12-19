@@ -7,7 +7,7 @@ import {
 import { CreateMessageDto } from './dto/create-message.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Message } from './entities/message.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { Dialog } from '../dialog/entities/dialog.entity';
 import { User } from '../user/entities/user.entity';
 import { ReturnUserDto } from '../user/dto/return-user.dto';
@@ -82,28 +82,41 @@ export class MessageService {
   }
 
   async deleteMessage(
-    userId: number,
     messageId: number,
-    deleteForAll: boolean,
+    userId: number,
+    deleteForEveryone = false,
   ) {
-    try {
-      const message = await this.messageRepository.findOne({
-        where: { id: messageId },
-        relations: ['dialog'],
-      });
-      if (!message) {
-        return new NotFoundException('Сообщение не найдено');
-      }
-      if (message.user.id !== userId) {
-        return new UnauthorizedException(
-          'Вы не можеье удалить данное сообщение',
-        );
-      }
-      await this.messageRepository.remove(message);
-    } catch (e) {
-      return new BadRequestException(e);
+    const message = await this.messageRepository.findOne({
+      where: { id: messageId },
+      relations: ['user', 'dialog'],
+    });
+
+    if (!message) {
+      throw new NotFoundException('Сообщение не найдено');
     }
+
+    // if (message.user.id !== userId) {
+    //   throw new BadRequestException(
+    //     'У вас нет прав на удаление этого сообщения',
+    //   );
+    // }
+
+    console.log(message.deletedForUsers);
+
+    if (message.deletedForUsers && message.deletedForUsers.includes(userId)) {
+      return null;
+    }
+
+    if (deleteForEveryone) {
+      await this.messageRepository.remove(message);
+    } else {
+      message.deletedForUsers = [...(message.deletedForUsers || []), userId];
+      return await this.messageRepository.save(message);
+    }
+
+    return { success: true, message: 'Сообщение удалено успешно' };
   }
+
   async updateMessagesStatus(dialogId: number, userId: number) {
     try {
       const result = await this.messageRepository
@@ -150,16 +163,20 @@ export class MessageService {
     }
   }
 
-  async getAllMessagesByDialogId(dialogId: number) {
+  async getAllMessagesByDialogId(dialogId: number, userId: number) {
     try {
       const messages = await this.messageRepository
         .createQueryBuilder('message')
+        .where('message.userId = :userId', { userId })
         .leftJoinAndSelect('message.dialog', 'dialog')
         .leftJoinAndSelect('dialog.users', 'users')
         .leftJoinAndSelect('message.user', 'user')
         .leftJoinAndSelect('user.avatar', 'userAvatar')
         .leftJoinAndSelect('message.files', 'files')
         .where('dialog.id = :dialogId', { dialogId })
+        .andWhere('NOT :userId = ANY(message.deletedForUsers)', {
+          userId: userId,
+        })
         .orderBy('message.created_at', 'DESC')
         .take(50)
         .offset(0)
@@ -178,9 +195,14 @@ export class MessageService {
         ])
         .getMany();
 
+      // const a = messages.filter(
+      //   (message) => !message.deletedForUsers === 'null' ,
+      // );
+
       return this.groupMessagesByDate(messages);
+      // return messages;
     } catch (e) {
-      return new BadRequestException(e);
+      return new BadRequestException(e.message || e);
     }
   }
 

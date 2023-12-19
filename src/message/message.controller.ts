@@ -5,6 +5,7 @@ import {
   MaxFileSizeValidator,
   Param,
   ParseFilePipe,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -19,6 +20,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { FilesService } from 'src/files/files.service';
+import { User } from '../user/entities/user.entity';
 
 @Controller('messages')
 export class MessageController {
@@ -62,9 +64,23 @@ export class MessageController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('delete/:messageId')
+  async deleteMessage(
+    @Param('messageId') messageId: number,
+    @Req() req,
+    @Body('deleteForEveryone') deleteForEveryone: false,
+  ) {
+    return this.messageService.deleteMessage(
+      messageId,
+      req.user.id,
+      deleteForEveryone,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get()
-  getAllMessagesByDialogId(@Query('dialogId') dialogId: number) {
-    return this.messageService.getAllMessagesByDialogId(dialogId);
+  getAllMessagesByDialogId(@Query('dialogId') dialogId: number, @Req() req) {
+    return this.messageService.getAllMessagesByDialogId(dialogId, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
