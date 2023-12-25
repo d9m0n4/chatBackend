@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -91,30 +92,53 @@ export class MessageService {
       relations: ['user', 'dialog'],
     });
 
+    const dialog = await this.dialogRepository.findOne({
+      where: { id: message.dialog.id },
+      relations: ['users'],
+    });
+
     if (!message) {
       throw new NotFoundException('Сообщение не найдено');
     }
 
-    // if (message.user.id !== userId) {
-    //   throw new BadRequestException(
-    //     'У вас нет прав на удаление этого сообщения',
-    //   );
-    // }
-
-    console.log(message.deletedForUsers);
+    const mId = message.id;
 
     if (message.deletedForUsers && message.deletedForUsers.includes(userId)) {
       return null;
     }
 
     if (deleteForEveryone) {
-      await this.messageRepository.remove(message);
+      await this.messageRepository.softRemove(message);
+      const previousLatestMessage = await this.messageRepository.findOne({
+        where: { dialog: { id: dialog.id } },
+        order: { created_at: 'desc' },
+        relations: ['user'],
+      });
+      dialog.latestMessage = previousLatestMessage
+        ? previousLatestMessage.id
+        : null;
+      await this.dialogRepository.save(dialog);
+      return {
+        success: true,
+        message: 'Сообщение удалено успешно',
+        messageId: mId,
+        dialog: dialog.id,
+        messageItem: {
+          ...previousLatestMessage,
+          dialog,
+        },
+      };
     } else {
       message.deletedForUsers = [...(message.deletedForUsers || []), userId];
-      return await this.messageRepository.save(message);
+      await this.messageRepository.save(message);
     }
-
-    return { success: true, message: 'Сообщение удалено успешно' };
+    return {
+      success: true,
+      message: 'Сообщение удалено успешно',
+      messageId: mId,
+      dialog: dialog.id,
+      messageItem: null,
+    };
   }
 
   async updateMessagesStatus(dialogId: number, userId: number) {
@@ -159,7 +183,7 @@ export class MessageService {
 
       return await this.favoriteMessageRepository.save({ user, message });
     } catch (e) {
-      return new BadRequestException(e, { description: 'Ошибка сервера' });
+      throw new Error(e);
     }
   }
 
@@ -195,12 +219,7 @@ export class MessageService {
         ])
         .getMany();
 
-      // const a = messages.filter(
-      //   (message) => !message.deletedForUsers === 'null' ,
-      // );
-
       return this.groupMessagesByDate(messages);
-      // return messages;
     } catch (e) {
       return new BadRequestException(e.message || e);
     }
@@ -216,6 +235,7 @@ export class MessageService {
         .leftJoinAndSelect('message.files', 'files')
         .leftJoin('favoriteMessage.user', 'user')
         .where('user.id = :userId', { userId })
+        .andWhere('message != null')
         .getMany();
 
       const messages = favoriteMessages.map((m) => {

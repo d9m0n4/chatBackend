@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -49,4 +50,9 @@ export class Message {
     onUpdate: 'CURRENT_TIMESTAMP(6)',
   })
   updated_at: Date;
+
+  @DeleteDateColumn({
+    type: 'timestamp',
+  })
+  deleted_at: Date;
 }

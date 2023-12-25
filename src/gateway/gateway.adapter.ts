@@ -16,20 +16,20 @@ export class CookieAuthSocketAdapter extends IoAdapter {
     const server = super.createIOServer(port, options);
 
     server.use(async (socket: AuthenticatedSocket, next) => {
-      const headers = socket.handshake.headers;
-      const cookies = cookie.parse(headers.cookie || '');
-
-      if (cookies.jwt) {
+      const token = socket.handshake.headers.authorization.split(' ')[1];
+      if (token) {
         try {
-          socket.user = await this.jwtService.verifyAsync(cookies.jwt);
+          socket.user = await this.jwtService.verifyAsync(
+            token.trim().substring(1, token.length - 1),
+          );
           next();
         } catch (error) {
           if (error instanceof jwt.TokenExpiredError) {
-            socket.emit('refreshToken');
             socket.disconnect();
             next();
           } else {
             console.error('JWT verification failed:', error);
+            throw new Error();
           }
         }
       }

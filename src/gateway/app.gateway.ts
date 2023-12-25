@@ -9,14 +9,23 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-import { Inject, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {
+  Inject,
+  UnauthorizedException,
+  UseFilters,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { GatewaySession } from './app.gateway.session';
 import { AuthenticatedSocket } from './types';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Message } from '../message/entities/message.entity';
 import { Dialog } from '../dialog/entities/dialog.entity';
+import { JwtService } from '@nestjs/jwt';
+import { WSAuthMiddleware } from './middleware/ws.middleware';
+import { Server as SocketIOServer, Socket } from 'socket.io';
 
+@UsePipes(new ValidationPipe())
 @WebSocketGateway({
   cors: {
     origin: ['http://localhost:3000'],
@@ -26,28 +35,35 @@ import { Dialog } from '../dialog/entities/dialog.entity';
 export class AppGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  constructor(@Inject('GATEWAY_SESSION') readonly sessions: GatewaySession) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    @Inject('GATEWAY_SESSION') readonly sessions: GatewaySession,
+  ) {}
   @WebSocketServer()
   server: Server;
 
-  @UseGuards(JwtAuthGuard)
-  handleConnection(client, ...args) {
+  afterInit(server: SocketIOServer) {
+    const middle = WSAuthMiddleware(this.jwtService);
+    server.use(middle);
+    console.log('afterInit socket', middle);
+  }
+
+  handleConnection(client: AuthenticatedSocket, ...args) {
+    console.log(client.user);
     if (client.user) {
+      console.log(client.user);
       this.sessions.setUserSocket(client.user.sub, client);
       console.log('from_connected', client.id, client.user.sub);
     }
   }
-
   handleDisconnect(client: any) {
+    console.log('disconnect eptas');
+
     if (client.user) {
       this.sessions.removeUserSocket(client.user.sub);
       console.log(client.user, 'disconnected');
       client.emit('dis', 'отвалился');
     }
-  }
-
-  async afterInit(server: any) {
-    console.log('afterInit socket');
   }
 
   @SubscribeMessage('create_dialog')
@@ -60,6 +76,26 @@ export class AppGateway
     return 'asdasdasd';
   }
 
+  @SubscribeMessage('on_dialog_leave')
+  async handleLeaveDialog(
+    @ConnectedSocket() socket: AuthenticatedSocket,
+    @MessageBody() args: { dialogId: number },
+  ) {
+    const roomName = `dialog_${args.dialogId}`;
+    socket.leave(roomName);
+    console.log(socket.user.sub, 'leave', args.dialogId);
+  }
+
+  @SubscribeMessage('on_dialog_join')
+  async handleJoinDialog(
+    @ConnectedSocket() socket: AuthenticatedSocket,
+    @MessageBody() args: { dialogId: number },
+  ) {
+    const roomName = `dialog_${args.dialogId}`;
+    socket.join(roomName);
+    console.log(socket.user.sub, 'joined', args.dialogId);
+  }
+
   @SubscribeMessage('user_online')
   async handleUserOnline(
     @MessageBody() myDialogPartners: number[],
@@ -70,7 +106,7 @@ export class AppGateway
       myDialogPartners.forEach((userId) => {
         const myDialogPartnerSocket = this.sessions.getUserSocket(userId);
         if (myDialogPartnerSocket && clientSocket.user) {
-          console.log(clientSocket.user);
+          console.log('hueta', clientSocket.user);
           myDialogPartnerSocket.emit('online', clientSocket.user.sub);
           partnersOnline.push(myDialogPartnerSocket.user.sub);
         }
@@ -120,6 +156,8 @@ export class AppGateway
           socket.emit('message_created', payload);
         }
       });
+      // const roomName = `dialog_${payload.dialog.id}`;
+      // this.server.to(roomName)
     }
   }
 
@@ -132,14 +170,6 @@ export class AppGateway
     userId: number;
   }) {
     if (dialog) {
-      // const currentUser = dialog.users.find(user => user.id === userId)
-      // const socket = this.sessions.getUserSocket(currentUser.id)
-      // if (socket) {
-      //   socket.emit('update_messages_status', {
-      //     userId,
-      //     dialogId: dialog.id,
-      //   });
-      // }
       dialog.users.forEach((user) => {
         const socket = this.sessions.getUserSocket(user.id);
         if (socket) {
@@ -163,4 +193,29 @@ export class AppGateway
       });
     }
   }
+
+  @OnEvent('delete_message')
+  handleDeleteMessage(payload: { messageId: number; dialog: number }) {
+    if (payload) {
+      const roomName = `dialog_${payload.dialog}`;
+      this.server
+        .to(roomName)
+        .emit('message_deleted', { messageId: payload.messageId });
+    }
+  }
+  @OnEvent('updateDialogLastMessage')
+  handleUpdateLastMessage(payload: Message) {
+    if (payload) {
+      payload.dialog.users.forEach((user) => {
+        if (user) {
+          const socket = this.sessions.getUserSocket(user.id);
+          if (socket) {
+            socket.emit('update_last_message', payload);
+          }
+        }
+      });
+    }
+  }
 }
+
+//TODO:при удалении сообщения у собеседника не обновляетя список сообщений

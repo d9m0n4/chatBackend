@@ -70,13 +70,27 @@ export class MessageController {
     @Req() req,
     @Body('deleteForEveryone') deleteForEveryone: false,
   ) {
-    return this.messageService.deleteMessage(
+    const {
+      messageItem,
+      message,
+      dialog,
+      success,
+      messageId: mId,
+    } = await this.messageService.deleteMessage(
       messageId,
       req.user.id,
       deleteForEveryone,
     );
+    if (messageItem) {
+      this.eventEmitter.emit('updateDialogLastMessage', messageItem);
+    }
+    this.eventEmitter.emit('delete_message', { messageId: mId, dialog });
+    return {
+      success,
+      message,
+      messageId: mId,
+    };
   }
-
   @UseGuards(JwtAuthGuard)
   @Get()
   getAllMessagesByDialogId(@Query('dialogId') dialogId: number, @Req() req) {

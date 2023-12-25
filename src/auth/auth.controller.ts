@@ -16,6 +16,7 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { RefreshJwtAuthGuard } from './guards/refresh-jwt-auth.guard';
 import { Response } from 'express';
+import { ReturnUserDto } from '../user/dto/return-user.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -28,17 +29,18 @@ export class AuthController {
       if (!req.user) {
         throw new UnauthorizedException('Invalid credentials');
       }
-      const user = await this.authService.signIn(req.user);
-      response.cookie('jwt', user.accessToken, {
+      const { accessToken, refreshToken, ...user } =
+        await this.authService.signIn(req.user);
+      response.cookie('jwt', accessToken, {
         httpOnly: true,
         secure: true,
       });
-      response.cookie('refresh', user.refreshToken, {
+      response.cookie('refresh', refreshToken, {
         httpOnly: true,
         secure: true,
       });
 
-      return req.user;
+      return { ...new ReturnUserDto(user), accessToken };
     } catch (error) {
       throw new InternalServerErrorException('Error signing in');
     }
