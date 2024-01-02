@@ -1,20 +1,19 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Message } from './entities/message.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Dialog } from '../dialog/entities/dialog.entity';
 import { User } from '../user/entities/user.entity';
 import { ReturnUserDto } from '../user/dto/return-user.dto';
 import { File } from '../files/entities/file.entity';
 import { isArray } from 'class-validator';
 import { FavoritesMessage } from './entities/favoritesMessages.entity';
+import { MessageConstants } from './message.constants';
 
 @Injectable()
 export class MessageService {
@@ -162,6 +161,61 @@ export class MessageService {
     } catch (e) {}
   }
 
+  async getAllMessagesByDialogId(
+    dialogId: number,
+    userId: number,
+    page?: number,
+  ) {
+    try {
+      const messagesCount = await this.messageRepository.count({
+        where: { dialog: { id: dialogId } },
+      });
+      const totalPages = Math.ceil(
+        messagesCount / MessageConstants.MESSAGES_TAKE_COUNT,
+      );
+      const offset = page ? page * MessageConstants.MESSAGES_TAKE_COUNT : 0;
+
+      console.log(offset);
+
+      const messages = await this.messageRepository
+        .createQueryBuilder('message')
+        .where('message.userId = :userId', { userId })
+        .leftJoinAndSelect('message.dialog', 'dialog')
+        .leftJoinAndSelect('dialog.users', 'users')
+        .leftJoinAndSelect('message.user', 'user')
+        .leftJoinAndSelect('user.avatar', 'userAvatar')
+        .leftJoinAndSelect('message.files', 'files')
+        .where('dialog.id = :dialogId', { dialogId })
+        .andWhere('NOT :userId = ANY(message.deletedForUsers)', {
+          userId: userId,
+        })
+        .orderBy('message.created_at', 'DESC')
+        .skip(offset)
+        .take(MessageConstants.MESSAGES_TAKE_COUNT)
+        .select([
+          'message',
+          'user.id',
+          'user.nickName',
+          'user.name',
+          'userAvatar.url',
+          'dialog',
+          'users.id',
+          'users.avatar',
+          'users.name',
+          'users.nickName',
+          'files',
+        ])
+        .getMany();
+
+      return {
+        messages: this.groupMessagesByDate(messages),
+        totalPages,
+      };
+    } catch (e) {
+      return new BadRequestException(e.message || e);
+    }
+  }
+
   async addFavoriteMessage(userId: number, messageId: number) {
     try {
       const favoriteMessage = await this.favoriteMessageRepository.findOne({
@@ -186,45 +240,6 @@ export class MessageService {
       throw new Error(e);
     }
   }
-
-  async getAllMessagesByDialogId(dialogId: number, userId: number) {
-    try {
-      const messages = await this.messageRepository
-        .createQueryBuilder('message')
-        .where('message.userId = :userId', { userId })
-        .leftJoinAndSelect('message.dialog', 'dialog')
-        .leftJoinAndSelect('dialog.users', 'users')
-        .leftJoinAndSelect('message.user', 'user')
-        .leftJoinAndSelect('user.avatar', 'userAvatar')
-        .leftJoinAndSelect('message.files', 'files')
-        .where('dialog.id = :dialogId', { dialogId })
-        .andWhere('NOT :userId = ANY(message.deletedForUsers)', {
-          userId: userId,
-        })
-        .orderBy('message.created_at', 'DESC')
-        .take(50)
-        .offset(0)
-        .select([
-          'message',
-          'user.id',
-          'user.nickName',
-          'user.name',
-          'userAvatar.url',
-          'dialog',
-          'users.id',
-          'users.avatar',
-          'users.name',
-          'users.nickName',
-          'files',
-        ])
-        .getMany();
-
-      return this.groupMessagesByDate(messages);
-    } catch (e) {
-      return new BadRequestException(e.message || e);
-    }
-  }
-
   async getFavoriteMessages(userId: number) {
     try {
       const favoriteMessages = await this.favoriteMessageRepository
@@ -235,12 +250,14 @@ export class MessageService {
         .leftJoinAndSelect('message.files', 'files')
         .leftJoin('favoriteMessage.user', 'user')
         .where('user.id = :userId', { userId })
-        .andWhere('message != null')
+        // .andWhere('favoriteMessage.message != NULL')
         .getMany();
 
-      const messages = favoriteMessages.map((m) => {
-        return { ...m.message, created_at: m.created_at };
-      });
+      const messages = favoriteMessages
+        .filter((message) => message.message !== null)
+        .map((m) => {
+          return { ...m.message, created_at: m.created_at };
+        });
 
       return this.groupMessagesByDate(messages);
     } catch (e) {

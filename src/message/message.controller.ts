@@ -98,6 +98,20 @@ export class MessageController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('history')
+  getMessagesHistory(
+    @Query('dialogId') dialogId: number,
+    @Query('page') page: number,
+    @Req() req,
+  ) {
+    return this.messageService.getAllMessagesByDialogId(
+      dialogId,
+      req.user.id,
+      page,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Patch('/update')
   async updateMessagesStatus(@Body() body, @Req() req) {
     const updatedMessages = await this.messageService.updateMessagesStatus(
@@ -110,6 +124,7 @@ export class MessageController {
     });
     return updatedMessages;
   }
+
   @UseGuards(JwtAuthGuard)
   @Post('/favorites')
   async addFavoriteMessage(@Body() body, @Req() req) {
