@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Dialog } from './entities/dialog.entity';
-import { In, Repository } from 'typeorm';
+import { In, Like, Not, Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
 import { Message } from '../message/entities/message.entity';
 import { ReturnUserDto } from '../user/dto/return-user.dto';
@@ -25,7 +25,7 @@ export class DialogService {
       });
 
       if (users.length < 2) {
-        throw new BadRequestException();
+        return new BadRequestException();
       }
 
       const existDialog = await this.dialogRepository
@@ -37,7 +37,7 @@ export class DialogService {
         .getMany();
 
       if (existDialog.length > 0) {
-        throw new BadRequestException('Такой диалог уже существует');
+        return new BadRequestException('Такой диалог уже существует');
       }
 
       const dialog = new Dialog();
@@ -48,11 +48,37 @@ export class DialogService {
 
       return {
         ...dialogData,
-        partner: partnerData,
+        users: undefined,
+        partner: new ReturnUserDto(partnerData),
+        unreadMessagesCount: 0,
       };
     } catch (error) {
       console.log(error);
-      throw new NotFoundException();
+      throw new BadRequestException(error);
+    }
+  }
+
+  async searchDialog(userName: string, userId: number) {
+    try {
+      const userForDialog = await this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.dialogs', 'dialogs')
+        .leftJoinAndSelect('dialogs.users', 'dialogUsers')
+        .where('user.id != :userId', { userId })
+        .andWhere('user.nickName like :name', { name: `%${userName}%` })
+        .getMany();
+
+      return userForDialog.filter((user) => {
+        const f = user.dialogs.find((dialog) =>
+          dialog.users.some((u) => u.id === userId),
+        );
+        if (!f) {
+          return user;
+        }
+      });
+    } catch (e) {
+      console.log(e);
+      throw new BadRequestException(e);
     }
   }
 
@@ -98,6 +124,7 @@ export class DialogService {
           partner: new ReturnUserDto(partner),
           unreadMessagesCount,
           users: undefined,
+          messages: undefined,
         };
       });
     } catch (error) {

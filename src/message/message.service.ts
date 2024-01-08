@@ -164,7 +164,7 @@ export class MessageService {
   async getAllMessagesByDialogId(
     dialogId: number,
     userId: number,
-    page?: number,
+    skip?: number,
   ) {
     try {
       const messagesCount = await this.messageRepository.count({
@@ -173,9 +173,7 @@ export class MessageService {
       const totalPages = Math.ceil(
         messagesCount / MessageConstants.MESSAGES_TAKE_COUNT,
       );
-      const offset = page ? page * MessageConstants.MESSAGES_TAKE_COUNT : 0;
-
-      console.log(offset);
+      const skipCount = skip || 0;
 
       const messages = await this.messageRepository
         .createQueryBuilder('message')
@@ -190,7 +188,7 @@ export class MessageService {
           userId: userId,
         })
         .orderBy('message.created_at', 'DESC')
-        .skip(offset)
+        .skip(skipCount)
         .take(MessageConstants.MESSAGES_TAKE_COUNT)
         .select([
           'message',
@@ -212,7 +210,7 @@ export class MessageService {
         totalPages,
       };
     } catch (e) {
-      return new BadRequestException(e.message || e);
+      throw new BadRequestException(e.message || e);
     }
   }
 

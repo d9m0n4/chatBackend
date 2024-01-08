@@ -101,13 +101,13 @@ export class MessageController {
   @Get('history')
   getMessagesHistory(
     @Query('dialogId') dialogId: number,
-    @Query('page') page: number,
+    @Query('skip') skip: number,
     @Req() req,
   ) {
     return this.messageService.getAllMessagesByDialogId(
       dialogId,
       req.user.id,
-      page,
+      skip,
     );
   }
 

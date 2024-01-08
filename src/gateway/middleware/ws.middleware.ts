@@ -1,5 +1,6 @@
 import { AuthenticatedSocket } from '../types';
 import { JwtService } from '@nestjs/jwt';
+import { WsException } from '@nestjs/websockets';
 
 export type SocketMiddleware = (
   socket: AuthenticatedSocket,
@@ -21,8 +22,7 @@ export const WSAuthMiddleware = (jwtService: JwtService): SocketMiddleware => {
       }
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
-        console.log(error);
-        socket.emit('unauth');
+        console.log('kek');
       } else {
         next({
           name: 'Unauthorized',

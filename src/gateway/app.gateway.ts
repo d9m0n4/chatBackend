@@ -49,20 +49,23 @@ export class AppGateway
   }
 
   handleConnection(client: AuthenticatedSocket, ...args) {
-    console.log(client.user);
     if (client.user) {
       console.log(client.user);
       this.sessions.setUserSocket(client.user.sub, client);
       console.log('from_connected', client.id, client.user.sub);
     }
+    if (client.recovered) {
+      console.log('client recovered');
+    } else {
+      console.log('nerecovered');
+    }
   }
-  handleDisconnect(client: any) {
-    console.log('disconnect eptas');
 
+  handleDisconnect(client: AuthenticatedSocket) {
+    console.log('disconnect eptas');
     if (client.user) {
       this.sessions.removeUserSocket(client.user.sub);
       console.log(client.user, 'disconnected');
-      client.emit('dis', 'отвалился');
     }
   }
 
@@ -83,7 +86,6 @@ export class AppGateway
   ) {
     const roomName = `dialog_${args.dialogId}`;
     socket.leave(roomName);
-    console.log(socket.user.sub, 'leave', args.dialogId);
   }
 
   @SubscribeMessage('on_dialog_join')
@@ -92,28 +94,33 @@ export class AppGateway
     @MessageBody() args: { dialogId: number },
   ) {
     const roomName = `dialog_${args.dialogId}`;
+
     socket.join(roomName);
-    console.log(socket.user.sub, 'joined', args.dialogId);
   }
 
-  @SubscribeMessage('user_online')
-  async handleUserOnline(
-    @MessageBody() myDialogPartners: number[],
-    @ConnectedSocket() clientSocket: AuthenticatedSocket,
-  ) {
-    const partnersOnline = [];
-    if (myDialogPartners) {
+  @OnEvent('user_online')
+  async handleUserOnline(myDialogPartners: number[], currentUserId: number) {
+    const socket = this.sessions.getUserSocket(currentUserId);
+    if (myDialogPartners.length > 0) {
       myDialogPartners.forEach((userId) => {
         const myDialogPartnerSocket = this.sessions.getUserSocket(userId);
-        if (myDialogPartnerSocket && clientSocket.user) {
-          console.log('hueta', clientSocket.user);
-          myDialogPartnerSocket.emit('online', clientSocket.user.sub);
-          partnersOnline.push(myDialogPartnerSocket.user.sub);
+        if (myDialogPartnerSocket && currentUserId) {
+          myDialogPartnerSocket.emit('online', currentUserId);
         }
       });
-      clientSocket.emit('friends_online', partnersOnline);
+      const users = myDialogPartners.map((userId) => {
+        const socket = this.sessions.getUserSocket(userId);
+        if (socket) {
+          return socket.user.sub;
+        }
+      });
+
+      if (socket && users.length > 0) {
+        socket.emit('friends_online', users);
+      }
     }
   }
+  //kek
 
   @SubscribeMessage('on_typing_message')
   async handleTypingMessage(
@@ -217,5 +224,3 @@ export class AppGateway
     }
   }
 }
-
-//TODO:при удалении сообщения у собеседника не обновляетя список сообщений

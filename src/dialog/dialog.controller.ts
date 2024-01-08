@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { DialogService } from './dialog.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -9,6 +17,12 @@ export class DialogController {
     private readonly dialogService: DialogService,
     private eventEmitter: EventEmitter2,
   ) {}
+
+  @UseGuards(JwtAuthGuard)
+  @Get('search')
+  findByNickName(@Query('nickname') nickName: string, @Req() req) {
+    return this.dialogService.searchDialog(nickName, req.user.id);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -22,6 +36,11 @@ export class DialogController {
   @UseGuards(JwtAuthGuard)
   @Get('my')
   async getMyDialogs(@Req() req) {
-    return await this.dialogService.getMyDialogsWithUsers(req.user.id);
+    const myDialogs = await this.dialogService.getMyDialogsWithUsers(
+      req.user.id,
+    );
+    const myPartnersIds = myDialogs.map((dialog) => dialog.partner.id);
+    this.eventEmitter.emit('user_online', myPartnersIds, req.user.id);
+    return myDialogs;
   }
 }
