@@ -22,7 +22,8 @@ export const WSAuthMiddleware = (jwtService: JwtService): SocketMiddleware => {
       }
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
-        console.log('kek');
+        console.log('kek zaebal');
+        socket.disconnect();
       } else {
         next({
           name: 'Unauthorized',

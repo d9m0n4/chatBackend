@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Dialog } from './entities/dialog.entity';
-import { In, Like, Not, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
 import { Message } from '../message/entities/message.entity';
 import { ReturnUserDto } from '../user/dto/return-user.dto';
@@ -130,6 +130,24 @@ export class DialogService {
     } catch (error) {
       console.log(error);
       throw new NotFoundException();
+    }
+  }
+
+  async getMyFriendsIds(userId: number) {
+    try {
+      const dialogs = await this.dialogRepository
+        .createQueryBuilder('dialog')
+        .innerJoinAndSelect('dialog.users', 'users')
+        .innerJoin('dialog.users', 'user')
+        .where('user.id = :userId', { userId })
+        .getMany();
+
+      const friends = dialogs.map((dialog) => {
+        return dialog.users.filter((user) => user.id !== userId)[0].id;
+      });
+      return friends;
+    } catch (e) {
+      throw new BadRequestException(e);
     }
   }
 }

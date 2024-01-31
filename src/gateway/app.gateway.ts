@@ -8,14 +8,8 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server } from 'socket.io';
-import {
-  Inject,
-  UnauthorizedException,
-  UseFilters,
-  UsePipes,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Server, Server as SocketIOServer } from 'socket.io';
+import { Inject, UsePipes, ValidationPipe } from '@nestjs/common';
 import { GatewaySession } from './app.gateway.session';
 import { AuthenticatedSocket } from './types';
 import { OnEvent } from '@nestjs/event-emitter';
@@ -23,7 +17,7 @@ import { Message } from '../message/entities/message.entity';
 import { Dialog } from '../dialog/entities/dialog.entity';
 import { JwtService } from '@nestjs/jwt';
 import { WSAuthMiddleware } from './middleware/ws.middleware';
-import { Server as SocketIOServer, Socket } from 'socket.io';
+import { DialogService } from '../dialog/dialog.service';
 
 @UsePipes(new ValidationPipe())
 @WebSocketGateway({
@@ -37,6 +31,7 @@ export class AppGateway
 {
   constructor(
     private readonly jwtService: JwtService,
+    private readonly dialogService: DialogService,
     @Inject('GATEWAY_SESSION') readonly sessions: GatewaySession,
   ) {}
   @WebSocketServer()
@@ -48,11 +43,24 @@ export class AppGateway
     console.log('afterInit socket', middle);
   }
 
-  handleConnection(client: AuthenticatedSocket, ...args) {
+  async handleConnection(client: AuthenticatedSocket, ...args) {
     if (client.user) {
       console.log(client.user);
       this.sessions.setUserSocket(client.user.sub, client);
       console.log('from_connected', client.id, client.user.sub);
+
+      const friendsIds = await this.dialogService.getMyFriendsIds(
+        client.user.sub,
+      );
+      const myFriendsOnline = [];
+      friendsIds.forEach((id) => {
+        const friendSocket = this.sessions.getUserSocket(id);
+        if (friendSocket) {
+          myFriendsOnline.push(id);
+          friendSocket.emit('set_friend_online', client.user.sub);
+        }
+      });
+      this.server.emit('friends_online', myFriendsOnline);
     }
     if (client.recovered) {
       console.log('client recovered');
@@ -61,22 +69,21 @@ export class AppGateway
     }
   }
 
-  handleDisconnect(client: AuthenticatedSocket) {
+  async handleDisconnect(client: AuthenticatedSocket) {
     console.log('disconnect eptas');
     if (client.user) {
       this.sessions.removeUserSocket(client.user.sub);
+      const friendsIds = await this.dialogService.getMyFriendsIds(
+        client.user.sub,
+      );
+      friendsIds.forEach((id) => {
+        const friendSocket = this.sessions.getUserSocket(id);
+        if (friendSocket) {
+          friendSocket.emit('set_friend_offline', client.user.sub);
+        }
+      });
       console.log(client.user, 'disconnected');
     }
-  }
-
-  @SubscribeMessage('create_dialog')
-  async handleCreateDialog(
-    @MessageBody() data: any,
-    @ConnectedSocket() socket,
-  ) {
-    const users = this.sessions.getSockets();
-    // socket.emit('users', socket.user);
-    return 'asdasdasd';
   }
 
   @SubscribeMessage('on_dialog_leave')
@@ -97,30 +104,6 @@ export class AppGateway
 
     socket.join(roomName);
   }
-
-  @OnEvent('user_online')
-  async handleUserOnline(myDialogPartners: number[], currentUserId: number) {
-    const socket = this.sessions.getUserSocket(currentUserId);
-    if (myDialogPartners.length > 0) {
-      myDialogPartners.forEach((userId) => {
-        const myDialogPartnerSocket = this.sessions.getUserSocket(userId);
-        if (myDialogPartnerSocket && currentUserId) {
-          myDialogPartnerSocket.emit('online', currentUserId);
-        }
-      });
-      const users = myDialogPartners.map((userId) => {
-        const socket = this.sessions.getUserSocket(userId);
-        if (socket) {
-          return socket.user.sub;
-        }
-      });
-
-      if (socket && users.length > 0) {
-        socket.emit('friends_online', users);
-      }
-    }
-  }
-  //kek
 
   @SubscribeMessage('on_typing_message')
   async handleTypingMessage(

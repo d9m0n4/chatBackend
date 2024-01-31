@@ -36,11 +36,6 @@ export class DialogController {
   @UseGuards(JwtAuthGuard)
   @Get('my')
   async getMyDialogs(@Req() req) {
-    const myDialogs = await this.dialogService.getMyDialogsWithUsers(
-      req.user.id,
-    );
-    const myPartnersIds = myDialogs.map((dialog) => dialog.partner.id);
-    this.eventEmitter.emit('user_online', myPartnersIds, req.user.id);
-    return myDialogs;
+    return await this.dialogService.getMyDialogsWithUsers(req.user.id);
   }
 }
