@@ -119,7 +119,7 @@ export class MessageController {
       req.user.id,
     );
     this.eventEmitter.emit('update_messages', {
-      dialog: updatedMessages.dialog,
+      dialog: updatedMessages,
       userId: req.user.id,
     });
     return updatedMessages;

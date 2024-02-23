@@ -34,7 +34,7 @@ export class Message {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @ManyToOne(() => Dialog, { nullable: false })
+  @ManyToOne(() => Dialog, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'dialogId' })
   dialog: Dialog;
 

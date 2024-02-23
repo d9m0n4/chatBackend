@@ -20,7 +20,7 @@ import { File } from '../files/entities/file.entity';
     JwtModule.register({
       global: true,
       secret: `qwe123`,
-      signOptions: { expiresIn: '60s' },
+      signOptions: { expiresIn: '1d' },
     }),
   ],
   controllers: [AuthController],

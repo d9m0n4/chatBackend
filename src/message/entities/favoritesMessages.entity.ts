@@ -18,7 +18,7 @@ export class FavoritesMessage {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @ManyToOne(() => Message, { nullable: false })
+  @ManyToOne(() => Message, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'messageId' })
   message: Message;
 

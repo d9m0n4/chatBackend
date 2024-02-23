@@ -54,7 +54,7 @@ export class File {
   @JoinColumn()
   message: Message;
 
-  @ManyToOne(() => Dialog)
+  @ManyToOne(() => Dialog, { onDelete: 'CASCADE' })
   @JoinColumn()
   dialog: Dialog;
 }

@@ -18,6 +18,7 @@ import { Dialog } from '../dialog/entities/dialog.entity';
 import { JwtService } from '@nestjs/jwt';
 import { WSAuthMiddleware } from './middleware/ws.middleware';
 import { DialogService } from '../dialog/dialog.service';
+import { UserService } from '../user/user.service';
 
 @UsePipes(new ValidationPipe())
 @WebSocketGateway({
@@ -32,6 +33,7 @@ export class AppGateway
   constructor(
     private readonly jwtService: JwtService,
     private readonly dialogService: DialogService,
+    private readonly userService: UserService,
     @Inject('GATEWAY_SESSION') readonly sessions: GatewaySession,
   ) {}
   @WebSocketServer()
@@ -47,6 +49,7 @@ export class AppGateway
     if (client.user) {
       console.log(client.user);
       this.sessions.setUserSocket(client.user.sub, client);
+      await this.userService.updateOnlineStatus(client.user.sub, true);
       console.log('from_connected', client.id, client.user.sub);
 
       const friendsIds = await this.dialogService.getMyFriendsIds(
@@ -62,17 +65,12 @@ export class AppGateway
       });
       this.server.emit('friends_online', myFriendsOnline);
     }
-    if (client.recovered) {
-      console.log('client recovered');
-    } else {
-      console.log('nerecovered');
-    }
   }
 
   async handleDisconnect(client: AuthenticatedSocket) {
-    console.log('disconnect eptas');
     if (client.user) {
       this.sessions.removeUserSocket(client.user.sub);
+      await this.userService.updateOnlineStatus(client.user.sub, false);
       const friendsIds = await this.dialogService.getMyFriendsIds(
         client.user.sub,
       );
@@ -137,6 +135,19 @@ export class AppGateway
     }
   }
 
+  @OnEvent('on_create_dialog')
+  async handleCreateDialog({ dialog, me, partner }) {
+    if (partner) {
+      const myDialogPartnerSocket = await this.sessions.getUserSocket(partner);
+      if (myDialogPartnerSocket) {
+        myDialogPartnerSocket.emit('new_dialog_created', {
+          ...dialog,
+          partner: me,
+        });
+      }
+    }
+  }
+
   @OnEvent('message_create')
   handleCreateMessage(payload: Message) {
     if (payload) {
@@ -146,8 +157,6 @@ export class AppGateway
           socket.emit('message_created', payload);
         }
       });
-      // const roomName = `dialog_${payload.dialog.id}`;
-      // this.server.to(roomName)
     }
   }
 
@@ -167,18 +176,6 @@ export class AppGateway
             userId,
             dialog,
           });
-        }
-      });
-    }
-  }
-
-  @OnEvent('dialog_create')
-  handleDialogCreate(payload) {
-    if (payload) {
-      payload.users.forEach((user) => {
-        const socket = this.sessions.getUserSocket(user.id);
-        if (socket) {
-          socket.emit('dialog_created', { ...payload, users: undefined });
         }
       });
     }

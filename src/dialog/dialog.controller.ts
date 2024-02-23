@@ -27,10 +27,16 @@ export class DialogController {
   @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Body() body: { partner: number }, @Req() req) {
-    const { partner } = body;
-    const dialog = await this.dialogService.create(partner, req.user.id);
-    this.eventEmitter.emit('dialog_create', dialog);
-    return dialog;
+    try {
+      const { partner } = body;
+      const dialog = await this.dialogService.create(partner, req.user.id);
+      const me = dialog.users.find((user) => user.id === req.user.id);
+      this.eventEmitter.emit('on_create_dialog', { dialog, me, partner });
+      console.log(dialog.users);
+      return { ...dialog, users: undefined };
+    } catch (e) {
+      return e.message;
+    }
   }
 
   @UseGuards(JwtAuthGuard)

@@ -102,11 +102,34 @@ export class UserService {
       user.nickName = updateUserDto.nickName;
       user.name = updateUserDto.name;
 
-      const file = new UserAvatar();
-      file.url = updateUserDto.avatarUrl;
+      if (updateUserDto.avatarUrl) {
+        const file = new UserAvatar();
+        file.url = updateUserDto.avatarUrl;
+        user.avatar = await this.userAvatarRepository.save(file);
+      }
 
-      user.avatar = await this.userAvatarRepository.save(file);
-      return new ReturnUserDto(await this.userRepository.save(user));
+      await this.userRepository.update(
+        { nickName: user.nickName },
+        { avatar: user.avatar, name: user.name, nickName: user.nickName },
+      );
+
+      return new ReturnUserDto(
+        await this.userRepository.findOne({
+          where: { nickName: user.nickName },
+          relations: ['avatar'],
+        }),
+      );
+    } catch (e) {
+      return new BadRequestException(e);
+    }
+  }
+
+  async updateOnlineStatus(userId: number, status: boolean) {
+    try {
+      return await this.userRepository.update(
+        { id: userId },
+        { isOnline: status },
+      );
     } catch (e) {
       return new BadRequestException(e);
     }

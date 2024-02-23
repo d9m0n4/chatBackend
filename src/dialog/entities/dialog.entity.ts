@@ -23,7 +23,9 @@ export class Dialog {
   @JoinTable()
   users: User[];
 
-  @OneToMany(() => Message, (message) => message.dialog)
+  @OneToMany(() => Message, (message) => message.dialog, {
+    cascade: true,
+  })
   messages: Message[];
 
   @OneToMany(() => File, (file) => file.dialog)

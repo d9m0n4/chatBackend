@@ -17,7 +17,7 @@ import { FavoritesMessage } from '../../message/entities/favoritesMessages.entit
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
-  id?: number;
+  id: number;
 
   @Column()
   name?: string;
@@ -31,6 +31,9 @@ export class User {
 
   @Column()
   password?: string;
+
+  @Column({ default: false })
+  isOnline?: boolean;
 
   @ManyToMany(() => Dialog, (dialog) => dialog.users)
   dialogs: Dialog[];

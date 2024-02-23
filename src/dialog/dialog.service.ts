@@ -20,24 +20,27 @@ export class DialogService {
   ) {}
   async create(partner: number, userId: number) {
     try {
-      const users = await this.userRepository.findBy({
-        id: In([partner, userId]),
+      const users = await this.userRepository.find({
+        where: {
+          id: In([partner, userId]),
+        },
+        relations: ['avatar'],
       });
 
       if (users.length < 2) {
-        return new BadRequestException();
+        throw new BadRequestException();
       }
 
       const existDialog = await this.dialogRepository
         .createQueryBuilder('dialog')
-        .innerJoin('dialog.users', 'user')
+        .innerJoinAndSelect('dialog.users', 'user')
         .where('user.id IN (:...userIds)', { userIds: [partner, userId] })
-        .groupBy('dialog.id')
+        .groupBy('dialog.id, user.id')
         .having('COUNT(dialog.id) = :userCount', { userCount: users.length })
         .getMany();
 
       if (existDialog.length > 0) {
-        return new BadRequestException('Такой диалог уже существует');
+        throw new BadRequestException('Такой диалог уже существует');
       }
 
       const dialog = new Dialog();
@@ -48,12 +51,11 @@ export class DialogService {
 
       return {
         ...dialogData,
-        users: undefined,
+        users: users.map((user) => new ReturnUserDto(user)),
         partner: new ReturnUserDto(partnerData),
         unreadMessagesCount: 0,
       };
     } catch (error) {
-      console.log(error);
       throw new BadRequestException(error);
     }
   }
@@ -64,20 +66,24 @@ export class DialogService {
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.dialogs', 'dialogs')
         .leftJoinAndSelect('dialogs.users', 'dialogUsers')
+        .leftJoin('user.avatar', 'avatar')
+        .addSelect(['avatar.url'])
         .where('user.id != :userId', { userId })
         .andWhere('user.nickName like :name', { name: `%${userName}%` })
         .getMany();
 
-      return userForDialog.filter((user) => {
-        const f = user.dialogs.find((dialog) =>
-          dialog.users.some((u) => u.id === userId),
-        );
-        if (!f) {
+      return userForDialog
+        .filter((user) => {
+          const dialogWithMe = user.dialogs.find((dialog) =>
+            dialog.users.some((dialogUser) => dialogUser.id === userId),
+          );
+          if (dialogWithMe) {
+            return;
+          }
           return user;
-        }
-      });
+        })
+        .map((user) => new ReturnUserDto(user));
     } catch (e) {
-      console.log(e);
       throw new BadRequestException(e);
     }
   }
@@ -128,7 +134,6 @@ export class DialogService {
         };
       });
     } catch (error) {
-      console.log(error);
       throw new NotFoundException();
     }
   }

@@ -152,13 +152,16 @@ export class MessageService {
 
       const dialog = await this.dialogRepository.findOne({
         where: { id: dialogId },
-        relations: { users: true },
+        relations: ['users', 'users.avatar'],
       });
       return {
-        ...result,
-        dialog,
+        ...dialog,
+        users: dialog.users.map((user) => new ReturnUserDto(user)),
       };
-    } catch (e) {}
+    } catch (e) {
+      console.log(e);
+      throw new BadRequestException(e);
+    }
   }
 
   async getAllMessagesByDialogId(
@@ -233,7 +236,15 @@ export class MessageService {
         );
       }
 
-      return await this.favoriteMessageRepository.save({ user, message });
+      const savedMessage = await this.favoriteMessageRepository.save({
+        user,
+        message,
+      });
+
+      return {
+        user: new ReturnUserDto(savedMessage.user),
+        message: savedMessage.message,
+      };
     } catch (e) {
       throw new Error(e);
     }
