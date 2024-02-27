@@ -30,7 +30,7 @@ export class Message {
   @OneToMany(() => File, (file) => file.message)
   files: File[];
 
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 

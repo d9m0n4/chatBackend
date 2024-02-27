@@ -19,7 +19,10 @@ export class Dialog {
   @PrimaryGeneratedColumn()
   id?: number;
 
-  @ManyToMany(() => User, (user) => user.dialogs)
+  @ManyToMany(() => User, (user) => user.dialogs, {
+    onDelete: 'CASCADE',
+    cascade: true,
+  })
   @JoinTable()
   users: User[];
 

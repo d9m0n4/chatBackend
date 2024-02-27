@@ -91,14 +91,14 @@ export class MessageService {
       relations: ['user', 'dialog'],
     });
 
+    if (!message) {
+      throw new NotFoundException('Сообщение не найдено');
+    }
+
     const dialog = await this.dialogRepository.findOne({
       where: { id: message.dialog.id },
       relations: ['users'],
     });
-
-    if (!message) {
-      throw new NotFoundException('Сообщение не найдено');
-    }
 
     const mId = message.id;
 
