@@ -8,9 +8,11 @@ import { Dialog } from '../dialog/entities/dialog.entity';
 import { UserAvatar } from './entities/userAvatar.entity';
 import { File } from '../files/entities/file.entity';
 import { FilesService } from '../files/files.service';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forFeature([User, Dialog, UserAvatar, File]),
     AuthModule,
   ],

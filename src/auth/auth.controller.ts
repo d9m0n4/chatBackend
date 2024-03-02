@@ -9,7 +9,6 @@ import {
   Res,
   UnauthorizedException,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -42,6 +41,7 @@ export class AuthController {
 
       return { ...new ReturnUserDto(user), accessToken };
     } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException('Error signing in');
     }
   }

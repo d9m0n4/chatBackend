@@ -7,9 +7,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { Dialog } from '../dialog/entities/dialog.entity';
 import { UserAvatar } from '../user/entities/userAvatar.entity';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Dialog, UserAvatar])],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forFeature([User, Dialog, UserAvatar]),
+  ],
   providers: [
     UserService,
     DialogService,

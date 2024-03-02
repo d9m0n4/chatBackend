@@ -23,7 +23,7 @@ import { UserService } from '../user/user.service';
 @UsePipes(new ValidationPipe())
 @WebSocketGateway({
   cors: {
-    origin: ['http://localhost:3000'],
+    origin: [process.env.ORIGIN],
     credentials: true,
   },
 })
@@ -42,7 +42,7 @@ export class AppGateway
   afterInit(server: SocketIOServer) {
     const middle = WSAuthMiddleware(this.jwtService);
     server.use(middle);
-    console.log('afterInit socket', middle);
+    console.log('afterInit socket', middle.name);
   }
 
   async handleConnection(client: AuthenticatedSocket, ...args) {

@@ -26,7 +26,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
 
       return user;
     } catch (error) {
-      throw error;
+      throw new BadRequestException(error);
     }
   }
 }

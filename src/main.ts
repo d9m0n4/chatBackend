@@ -13,6 +13,6 @@ async function bootstrap() {
   app.use(cookieParser());
   app.use(helmet());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-  await app.listen(5000);
+  await app.listen(process.env.APP_PORT);
 }
 bootstrap();

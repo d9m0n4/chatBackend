@@ -12,14 +12,16 @@ import { RefreshTokenStrategy } from './strategies/refreshToken.strategy';
 import { FilesService } from '../files/files.service';
 import { UserAvatar } from '../user/entities/userAvatar.entity';
 import { File } from '../files/entities/file.entity';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forFeature([User, UserAvatar, File]),
     PassportModule,
     JwtModule.register({
       global: true,
-      secret: `qwe123`,
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1d' },
     }),
   ],

@@ -1,6 +1,5 @@
 import { AuthenticatedSocket } from '../types';
 import { JwtService } from '@nestjs/jwt';
-import { WsException } from '@nestjs/websockets';
 
 export type SocketMiddleware = (
   socket: AuthenticatedSocket,
@@ -10,7 +9,9 @@ export const WSAuthMiddleware = (jwtService: JwtService): SocketMiddleware => {
   return async (socket, next) => {
     try {
       const token = socket.handshake.headers['authorization'].split(' ')[1];
-      const payload = jwtService.verify(token, { secret: 'qwe123' });
+      const payload = jwtService.verify(token, {
+        secret: process.env.JWT_SECRET,
+      });
       if (payload) {
         socket.user = payload;
         next();
@@ -22,7 +23,7 @@ export const WSAuthMiddleware = (jwtService: JwtService): SocketMiddleware => {
       }
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
-        console.log('kek zaebal');
+        console.log('token expired');
         socket.disconnect();
       } else {
         next({
