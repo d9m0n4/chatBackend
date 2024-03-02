@@ -224,14 +224,14 @@ export class MessageService {
       });
 
       if (favoriteMessage) {
-        return new BadRequestException('Сообщение уже добавлено в избранное');
+        throw new BadRequestException('Сообщение уже добавлено в избранное');
       }
       const user = await this.userRepository.findOneBy({ id: userId });
       const message = await this.messageRepository.findOne({
         where: { id: messageId },
       });
       if (!user || !message) {
-        return new BadRequestException(
+        throw new BadRequestException(
           'Ошибка добавления сообщения в избранное',
         );
       }
@@ -246,7 +246,7 @@ export class MessageService {
         message: savedMessage.message,
       };
     } catch (e) {
-      throw new Error(e);
+      throw new BadRequestException(e);
     }
   }
   async getFavoriteMessages(userId: number) {
