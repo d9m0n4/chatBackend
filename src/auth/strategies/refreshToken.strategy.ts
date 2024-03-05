@@ -13,7 +13,7 @@ export class RefreshTokenStrategy extends PassportStrategy(
         (request) => request?.cookies?.refresh,
       ]),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET,
+      secretOrKey: 'asdasdasda',
     });
   }
   async validate(payload: any) {

@@ -14,7 +14,7 @@ import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { RefreshJwtAuthGuard } from './guards/refresh-jwt-auth.guard';
-import { Response } from 'express';
+import { CookieOptions, Response } from 'express';
 import { ReturnUserDto } from '../user/dto/return-user.dto';
 
 @Controller('auth')
@@ -30,16 +30,19 @@ export class AuthController {
       }
       const { accessToken, refreshToken, ...user } =
         await this.authService.signIn(req.user);
-      response.cookie('jwt', accessToken, {
-        httpOnly: true,
-        secure: true,
-      });
-      response.cookie('refresh', refreshToken, {
-        httpOnly: true,
-        secure: true,
-      });
 
-      return { ...new ReturnUserDto(user), accessToken };
+      const cookieOptions: CookieOptions = {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+        path: '/',
+        secure: true,
+        sameSite: "none"
+      };
+
+      response.cookie('jwt', accessToken, cookieOptions);
+      response.cookie('refresh', refreshToken, cookieOptions);
+
+      return { ...new ReturnUserDto(user), accessToken, message: 'success' };
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException('Error signing in');
@@ -66,7 +69,7 @@ export class AuthController {
   ) {
     const token = await this.authService.refreshToken(req.user);
     response.cookie('jwt', token.accessToken, {
-      httpOnly: true,
+      httpOnly: false,
       secure: false,
     });
     return token;

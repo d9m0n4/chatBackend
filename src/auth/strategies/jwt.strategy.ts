@@ -11,8 +11,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
           return request?.cookies?.jwt;
         },
       ]),
+      // jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken()
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET,
+      secretOrKey: 'asdasdasda',
     });
   }
   async validate(payload: any) {

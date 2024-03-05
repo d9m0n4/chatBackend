@@ -22,10 +22,7 @@ import { UserService } from '../user/user.service';
 
 @UsePipes(new ValidationPipe())
 @WebSocketGateway({
-  cors: {
-    origin: [process.env.ORIGIN],
-    credentials: true,
-  },
+  cors: false
 })
 export class AppGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect

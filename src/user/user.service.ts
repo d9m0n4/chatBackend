@@ -76,7 +76,7 @@ export class UserService {
       return new ReturnUserDto({ ...userData, avatar: userData.avatar });
     } catch (e) {
       console.log(e);
-      return new UnauthorizedException();
+      return new UnauthorizedException(e);
     }
   }
 
