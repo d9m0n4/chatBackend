@@ -20,20 +20,20 @@ import { FavoritesMessage } from './message/entities/favoritesMessages.entity';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      // useFactory: (configService: ConfigService) => ({
-      //   type: 'postgres',
-      //   host: process.env.DBHOST,
-      //   port: +process.env.DBPORT,
-      //   database: process.env.DBNAME,
-      //   username: process.env.DBUSER,
-      //   password: process.env.DBPASS,
-      //   entities: [User, Dialog, Message, File, UserAvatar, FavoritesMessage],
-      //   synchronize: true,
-      // }),
-      // inject: [ConfigService],
-    }),
+    // TypeOrmModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   // useFactory: (configService: ConfigService) => ({
+    //   //   type: 'postgres',
+    //   //   host: process.env.DBHOST,
+    //   //   port: +process.env.DBPORT,
+    //   //   database: process.env.DBNAME,
+    //   //   username: process.env.DBUSER,
+    //   //   password: process.env.DBPASS,
+    //   //   entities: [User, Dialog, Message, File, UserAvatar, FavoritesMessage],
+    //   //   synchronize: true,
+    //   // }),
+    //   // inject: [ConfigService],
+    // }),
     EventEmitterModule.forRoot(),
     UserModule,
     AuthModule,
