@@ -21,9 +21,17 @@ import { DialogService } from '../dialog/dialog.service';
 import { UserService } from '../user/user.service';
 
 @UsePipes(new ValidationPipe())
-@WebSocketGateway({
-  cors: false
-})
+@WebSocketGateway(cors: {
+      origin: 'https://chat-194.vercel.app',
+      credentials: true,
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'Access-Control-Allow-Methods',
+        'Access-Control-Request-Headers',
+        'Access-Control-Allow-Origin',
+      ],
+    },)
 export class AppGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
