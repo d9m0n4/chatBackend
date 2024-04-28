@@ -36,7 +36,7 @@ export class AuthController {
         httpOnly: true,
         path: '/',
         secure: true,
-        sameSite: "none"
+        sameSite: 'none',
       };
 
       response.cookie('jwt', accessToken, cookieOptions);

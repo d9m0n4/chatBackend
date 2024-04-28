@@ -10,12 +10,12 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import {UserService} from './user.service';
-import {CreateUserDto} from './dto/create-user.dto';
-import {UpdateUserDto} from './dto/update-user.dto';
-import {JwtAuthGuard} from '../auth/guards/jwt-auth.guard';
-import {FileInterceptor} from '@nestjs/platform-express';
-import {FilesService} from '../files/files.service';
+import { UserService } from './user.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesService } from '../files/files.service';
 
 @Controller('user')
 export class UserController {

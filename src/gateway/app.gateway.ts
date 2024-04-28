@@ -23,7 +23,7 @@ import { UserService } from '../user/user.service';
 @UsePipes(new ValidationPipe())
 @WebSocketGateway({
   cors: {
-    origin: 'https://chat-194.vercel.app',
+    origin: process.env.ORIGIN,
     credentials: true,
     allowedHeaders: [
       'Content-Type',

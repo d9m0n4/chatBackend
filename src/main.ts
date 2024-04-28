@@ -9,7 +9,7 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     cors: {
-      origin: 'https://chat-194.vercel.app',
+      origin: process.env.ORIGIN,
       credentials: true,
       allowedHeaders: [
         'Content-Type',
